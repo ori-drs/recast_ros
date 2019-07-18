@@ -4,6 +4,7 @@
   <!-- load and publish fsc map -->
   <node pkg="recast_demos" type="gridmap_fsc_demo_node" name="gridmap_fsc_demo_node" respawn="true" output="screen">
   	<param name="resolution" value="0.05" />
+  	<param name="path" value="$(find recast_demos)/data/fsc-oil-rig-map-full-1cm-clean.pcd" />
   </node>
 
   <!-- elevation map filters -->
