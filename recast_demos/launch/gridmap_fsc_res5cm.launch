@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- load and publish fsc map -->
+  <node pkg="recast_demos" type="gridmap_fsc_demo_node" name="gridmap_fsc_demo_node" respawn="true" output="screen">
+  	<param name="resolution" value="0.05" />
+  </node>
+
+  <!-- elevation map filters -->
+  <node pkg="grid_map_demos" type="filters_demo" name="elevation_map_filtering" respawn="true" output="screen">
+  	<param name="input_topic" value="/gridmap_fsc_demo_node/map" />
+  	<param name="output_topic" value="/gridmap_fsc_demo_node/map_filtered" />
+    <rosparam command="load" file="$(find recast_demos)/config/filters_demo_filter_chain_res5cm.yaml" />
+  </node>
+
+  <!-- save filtered map to file -->
+  <node pkg="recast_demos" type="gridmap_save_node" name="gridmap_save_node" respawn="true" output="screen">
+  	<param name="input_topic" value="/gridmap_fsc_demo_node/map_filtered" />
+  	<param name="save_path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />
+  	<param name="save_path_areas" value="$(find recast_demos)/data/gridmap_fsc_res5cm.dat" />
+  </node>
+
+  <!-- Launch the grid map visualizer -->
+  <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen" />
+
+  <!-- Launch RViz with the demo configuration -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/grid_map_demo.rviz" />
+
+</launch>
