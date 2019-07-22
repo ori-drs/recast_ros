@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(recast_demos)
+project(recast_ros)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,7 +7,7 @@ project(recast_demos)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
-  grid_map_ros
+  visualization_msgs
   pcl_ros
 )
 
@@ -16,24 +16,36 @@ find_package(catkin REQUIRED COMPONENTS
 
 #list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Use c++11
+#macro(use_cxx11)
+#  if (CMAKE_VERSION VERSION_LESS "3.1")
+#    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#      set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+#    endif ()
+#  else ()
+#    set (CMAKE_CXX_STANDARD 11)
+#  endif ()
+#endmacro(use_cxx11)
+#use_cxx11()
+
 # Recast Library
-#set(RECAST_DIR "src/recast/recastnavigation")
-#set(RECAST_INCLUDE_DIRS
-#  ${RECAST_DIR}/DebugUtils/Include
-#  ${RECAST_DIR}/Detour/Include
-#  ${RECAST_DIR}/DetourTileCache/Include
-#  ${RECAST_DIR}/Recast/Include
-#  src/recast
-#)
-#include_directories(${RECAST_INCLUDE_DIRS})
-#file(GLOB RecastSources
-#  ${RECAST_DIR}/DebugUtils/Source/*.cpp
-#  ${RECAST_DIR}/Detour/Source/*.cpp
-#  ${RECAST_DIR}/DetourTileCache/Source/*.cpp
-#  ${RECAST_DIR}/Recast/Source/*.cpp
-#  ${RECASTDEMO_DIR}/Source/*.cpp
-#  src/recast/recastapp/*.cpp
-#)
+set(RECAST_DIR "src/recastnavigation")
+set(RECAST_INCLUDE_DIRS
+  ${RECAST_DIR}/DebugUtils/Include
+  ${RECAST_DIR}/Detour/Include
+  ${RECAST_DIR}/DetourTileCache/Include
+  ${RECAST_DIR}/Recast/Include
+  include
+)
+include_directories(${RECAST_INCLUDE_DIRS})
+file(GLOB RecastSources
+  ${RECAST_DIR}/DebugUtils/Source/*.cpp
+  ${RECAST_DIR}/Detour/Source/*.cpp
+  ${RECAST_DIR}/DetourTileCache/Source/*.cpp
+  ${RECAST_DIR}/Recast/Source/*.cpp
+  ${RECASTDEMO_DIR}/Source/*.cpp
+  src/*.cpp
+)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -125,7 +137,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wabian_planner
-  CATKIN_DEPENDS roscpp roslib grid_map_ros pcl_ros
+  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros
 #  DEPENDS system_lib
 )
 
@@ -142,20 +154,22 @@ include_directories(
 )
 
 ## Declare a C++ library
+add_library(recast_ros
+  ${RecastSources}
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(wabian_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## gridmap nodes
-add_executable(gridmap_fsc_demo_node src/gridmap_fsc_demo_node.cpp)
-add_dependencies(gridmap_fsc_demo_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(gridmap_fsc_demo_node ${catkin_LIBRARIES})
-
-add_executable(gridmap_save_node src/gridmap_save_node.cpp)
-add_dependencies(gridmap_save_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(gridmap_save_node ${catkin_LIBRARIES})
+## recast test
+add_executable(recast_test_node src/recast_test_node.cpp)
+add_dependencies(recast_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(recast_test_node
+  recast_ros
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
