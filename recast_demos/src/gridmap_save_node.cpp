@@ -38,10 +38,23 @@ struct Save
     std::vector<char> trilabels;
     convert(gridMap, pclMesh, trilabels);
     ROS_INFO("converted to pcl");
+    // change coords
+    pcl::PointCloud<pcl::PointXYZ> temp, temp0; // temp array
+    pcl::fromPCLPointCloud2(pclMesh.cloud, temp);
+    pcl::fromPCLPointCloud2(pclMesh.cloud, temp0);
+    for(int i = 0; i < temp.size(); i++)
+    {
+      //temp0.at(i).x = temp.at(i).x; // keep X same | not needed.
+      // Update Y and Z
+      temp0.at(i).y = temp.at(i).z;
+      temp0.at(i).z = -temp.at(i).y;
+    }
+    pcl::toPCLPointCloud2(temp0, pclMesh.cloud);
     // save to file
     pcl::io::saveOBJFile(savePath_, pclMesh); // pcl::io::savePLYFile(savePath_, pclMesh);
+    ROS_INFO("saved OBJ to file");
     saveAreas(savePathAreas_, trilabels);
-    ROS_INFO("saved to file");
+    ROS_INFO("saved AREAS to file");
     // test
     pcl::PolygonMesh pclMesh2;
     pcl::io::loadPolygonFileOBJ(savePath_, pclMesh2); // pcl::io::loadPolygonFilePLY(savePath_, pclMesh2);
@@ -70,13 +83,17 @@ struct Save
   {
     std::ofstream FILE(path, std::ios::out | std::ofstream::binary);
     std::copy(labels.begin(), labels.end(), std::ostreambuf_iterator<char>(FILE));
+    FILE.close();
+    return true;
   }
   bool loadAreas(const std::string& path, std::vector<char>& labels)
   {
     std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);
     std::istreambuf_iterator<char> eos;
     std::istreambuf_iterator<char> iter(INFILE);
-    std::copy(iter, eos, std::back_inserter(labels));    
+    std::copy(iter, eos, std::back_inserter(labels));
+    INFILE.close();
+    return true;
   }
   bool convert(const grid_map::GridMap& gridMap, pcl::PolygonMesh& mesh, std::vector<char>& trilabels)
   {
