@@ -235,7 +235,7 @@ void Sample::handleStep()
 		m_tool->handleStep();
 }
 */
-bool Sample::handleBuild()
+bool Sample::handleBuild(const std::vector<char> & areaTypes)
 {
 	return true;
 }

@@ -361,7 +361,7 @@ void MySample::handleMeshChanged(class InputGeom* geom)
 }
 
 
-bool MySample::handleBuild()
+bool MySample::handleBuild(const std::vector<char> & areaTypes)
 {
 	if (!m_geom || !m_geom->getMesh())
 	{
@@ -447,6 +447,14 @@ bool MySample::handleBuild()
 	// the are type for each of the meshes and rasterize them.
 	memset(m_triareas, 0, ntris*sizeof(unsigned char));
 	rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
+
+	for(int i = 0; i < ntris; i++)		//Pass Area Types to Triangles
+	{
+		m_triareas[i] = areaTypes.at(i);
+	}
+
+
+
 	if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
@@ -484,6 +492,7 @@ bool MySample::handleBuild()
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'chf'.");
 		return false;
 	}
+
 	if (!rcBuildCompactHeightfield(m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
@@ -647,23 +656,10 @@ bool MySample::handleBuild()
 		// Update poly flags from areas.
 		for (int i = 0; i < m_pmesh->npolys; ++i)
 		{
-			if (m_pmesh->areas[i] == RC_WALKABLE_AREA)
-				m_pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
-				
-			if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
-				m_pmesh->areas[i] == SAMPLE_POLYAREA_GRASS ||
-				m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
-			{
+			if(m_pmesh->areas[i] > TERRAIN_TYPE_NULL)
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
-			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
-			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
-			}
-			else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
-			{
-				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
-			}
+			else
+				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_DISABLED;		
 		}
 
 

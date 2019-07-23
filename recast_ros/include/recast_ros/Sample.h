@@ -21,6 +21,7 @@
 
 #include "Recast.h"
 #include "SampleInterfaces.h"
+#include <vector>
 
 /*
 /// Tool types.
@@ -40,7 +41,7 @@ enum SampleToolType
 */
 /// These are just sample areas to use consistent values across the samples.
 /// The use should specify these base on his needs.
-enum SamplePolyAreas
+/*enum SamplePolyAreas  // Recast Sample Terrain Types
 {
 	SAMPLE_POLYAREA_GROUND,
 	SAMPLE_POLYAREA_WATER,
@@ -48,7 +49,19 @@ enum SamplePolyAreas
 	SAMPLE_POLYAREA_DOOR,
 	SAMPLE_POLYAREA_GRASS,
 	SAMPLE_POLYAREA_JUMP,
+};*/
+
+enum TerrainTypes
+{
+	TERRAIN_TYPE_NULL,
+	TERRAIN_TYPE0,
+	TERRAIN_TYPE1,
+	TERRAIN_TYPE2,
+	TERRAIN_TYPE3
+	// ... can have # Terrain Types up to RC_WALKABLE_AREAS (see Recast.h) # Terrain Types <= RC_WALKABLE_AREAS
 };
+
+
 enum SamplePolyFlags
 {
 	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
@@ -139,7 +152,7 @@ public:
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom* geom);
-	virtual bool handleBuild();
+	virtual bool handleBuild(const std::vector<char> & areaTypes);
 	//virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings& settings);
 

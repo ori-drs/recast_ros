@@ -74,7 +74,7 @@ public:
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom* geom);
-	virtual bool handleBuild();
+	virtual bool handleBuild(const std::vector<char> & areaTypes);
 
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.

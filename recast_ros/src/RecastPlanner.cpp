@@ -27,7 +27,7 @@ RecastPlanner::RecastPlanner () : needToRotateMesh(true)
   stg.partitionType = SAMPLE_PARTITION_WATERSHED;
 }
 
-bool RecastPlanner::build (const pcl::PolygonMesh& pclMesh)
+bool RecastPlanner::build (const pcl::PolygonMesh& pclMesh, const std::vector<char> & areaTypes)
 {
   // Build navmesh
   geom = boost::shared_ptr<InputGeom>(new InputGeom());
@@ -38,17 +38,30 @@ bool RecastPlanner::build (const pcl::PolygonMesh& pclMesh)
   sample->setContext(&ctx);
   sample->handleMeshChanged(geom.get());
   sample->handleSettings();
-  sample->handleBuild();
+  sample->handleBuild(areaTypes);
   return true;
 }
+ bool RecastPlanner::loadAreas(const std::string& path, std::vector<char>& labels)
+  {
+    // load file with per-triangle area types
+    std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);
+    std::istreambuf_iterator<char> eos;
+    std::istreambuf_iterator<char> iter(INFILE);
+    std::copy(iter, eos, std::back_inserter(labels));
+    return true;   
+  }
 
-bool RecastPlanner::loadAndBuild (const std::string& file)
+
+bool RecastPlanner::loadAndBuild (const std::string& mapFile, const std::string & areaFile)
 {
   // Load mesh file
   pcl::PolygonMesh pclMesh;
-  if (!pcl::io::loadPolygonFile (file, pclMesh))
+  std::vector<char> areaTypes;
+  if (!pcl::io::loadPolygonFile (mapFile, pclMesh))
     return false;
-  return build (pclMesh);
+  if(!loadAreas(areaFile, areaTypes))
+    return false;
+  return build (pclMesh, areaTypes);
 }
 
 bool RecastPlanner::query (const pcl::PointXYZ& start, const pcl::PointXYZ& end, std::vector<pcl::PointXYZ>& path)

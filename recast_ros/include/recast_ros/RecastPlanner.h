@@ -13,8 +13,9 @@ namespace recastapp
   {
   public:
     RecastPlanner();
-    bool build (const pcl::PolygonMesh& pclMesh);
-    bool loadAndBuild (const std::string& file);
+    bool build (const pcl::PolygonMesh& pclMesh, const std::vector<char> & areaTypes);
+    bool loadAreas(const std::string& path, std::vector<char>& labels);
+    bool loadAndBuild (const std::string& mapFile, const std::string& areaFile);
     bool query (const pcl::PointXYZ& start, const pcl::PointXYZ& end, std::vector<pcl::PointXYZ>& path);
     bool getNavMesh (pcl::PolygonMesh::Ptr& pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr& pclcloud, std::vector<Eigen::Vector3d>& lineList) const;
     bool getNavMesh (pcl::PolygonMesh::Ptr& pclmesh) const;

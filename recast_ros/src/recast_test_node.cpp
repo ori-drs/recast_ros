@@ -42,7 +42,7 @@ struct RecastTest
     loadAreas(pathAreas_, trilabels);
     ROS_INFO("loaded AREAS file");
     // build NavMesh. TODO: use trilabels in the construction
-    if (!recast_.build(pclMesh)) {
+    if (!recast_.build(pclMesh, trilabels)) {
       ROS_ERROR("Could not build NavMesh");
       return;
     }
@@ -71,7 +71,8 @@ struct RecastTest
     std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);
     std::istreambuf_iterator<char> eos;
     std::istreambuf_iterator<char> iter(INFILE);
-    std::copy(iter, eos, std::back_inserter(labels));    
+    std::copy(iter, eos, std::back_inserter(labels));
+    return true;   
   }
   ros::NodeHandle nodeHandle_;
   std::string path_;
