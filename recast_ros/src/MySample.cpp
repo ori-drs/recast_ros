@@ -656,7 +656,7 @@ bool MySample::handleBuild(const std::vector<char> & areaTypes)
 		// Update poly flags from areas.
 		for (int i = 0; i < m_pmesh->npolys; ++i)
 		{
-			if(m_pmesh->areas[i] > TERRAIN_TYPE_NULL)
+			if(m_pmesh->areas[i] <= RC_WALKABLE_AREA)
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
 			else
 				m_pmesh->flags[i] = SAMPLE_POLYFLAGS_DISABLED;		

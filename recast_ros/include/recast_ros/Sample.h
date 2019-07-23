@@ -53,7 +53,6 @@ enum SampleToolType
 
 enum TerrainTypes
 {
-	TERRAIN_TYPE_NULL,
 	TERRAIN_TYPE0,
 	TERRAIN_TYPE1,
 	TERRAIN_TYPE2,
