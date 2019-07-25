@@ -41,7 +41,7 @@ bool RecastPlanner::build (const pcl::PolygonMesh& pclMesh, const std::vector<ch
   sample->handleBuild(areaTypes);
   return true;
 }
- bool RecastPlanner::loadAreas(const std::string& path, std::vector<char>& labels)
+ bool loadAreas(const std::string& path, std::vector<char>& labels)
   {
     // load file with per-triangle area types
     std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);

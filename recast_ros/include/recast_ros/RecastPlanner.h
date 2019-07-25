@@ -14,7 +14,6 @@ namespace recastapp
   public:
     RecastPlanner();
     bool build (const pcl::PolygonMesh& pclMesh, const std::vector<char> & areaTypes);
-    bool loadAreas(const std::string& path, std::vector<char>& labels);
     bool loadAndBuild (const std::string& mapFile, const std::string& areaFile);
     bool query (const pcl::PointXYZ& start, const pcl::PointXYZ& end, std::vector<pcl::PointXYZ>& path);
     bool getNavMesh (pcl::PolygonMesh::Ptr& pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr& pclcloud, std::vector<Eigen::Vector3d>& lineList) const;
@@ -27,5 +26,5 @@ namespace recastapp
     boost::shared_ptr<InputGeom> geom;
     bool needToRotateMesh;
   };
-
 }
+bool loadAreas(const std::string& path, std::vector<char>& labels);
