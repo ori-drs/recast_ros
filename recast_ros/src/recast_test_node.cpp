@@ -13,7 +13,8 @@
 #include <fstream>
 
 
-ros::Publisher marker_pub;
+ros::Publisher NavMeshPub;
+ros::Publisher OriginalMeshPub;
 
 
 struct RecastTest
@@ -38,9 +39,10 @@ struct RecastTest
     recast_.stg.agentMaxClimb = 0.41f;
     recast_.stg.agentMaxSlope = 60.0f;
   }
-  void setVisualParameters(visualization_msgs::Marker &v)
+  void setVisualParametersTriList(visualization_msgs::Marker &v)
   {
     v.header.frame_id = "/my_frame";
+    v.type = visualization_msgs::Marker::TRIANGLE_LIST;
     v.header.stamp = ros::Time::now();
 
     // Set the namespace and id for this marker.  This serves to create a unique ID
@@ -71,15 +73,54 @@ struct RecastTest
 
     v.lifetime = ros::Duration();
   }
+  void setVisualParametersLineList(visualization_msgs::Marker &v)
+  {
+    v.header.frame_id = "/my_frame";
+    v.type = visualization_msgs::Marker::LINE_LIST;
+    v.header.stamp = ros::Time::now();
+
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    // Any marker sent with the same namespace and id will overwrite the old one
+    v.ns = "Lines";
+    v.id = 1;
+
+    // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
+    v.action = visualization_msgs::Marker::ADD;
+    v.pose.position.x = 0;
+    v.pose.position.y = 0;
+    v.pose.position.z = 0;
+    v.pose.orientation.x = 0.0;
+    v.pose.orientation.y = 0.0;
+    v.pose.orientation.z = 0.0;
+    v.pose.orientation.w = 1.0;
+
+    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    v.scale.x = 0.03;
+    v.scale.y = 0.0;
+    v.scale.z = 0.0;
+
+    // Set the color -- be sure to set alpha to something non-zero!
+    v.color.r = 0.0f;
+    v.color.g = 1.0f;
+    v.color.b = 0.0f;
+    v.color.a = 1.0;
+
+    v.lifetime = ros::Duration();
+  }
+
+
   void test()
   {
     // load
     pcl::PolygonMesh pclMesh;
     std::vector<char> trilabels;
     visualization_msgs::Marker triList;
-    triList.type = visualization_msgs::Marker::TRIANGLE_LIST;
-    setVisualParameters(triList);
-
+    visualization_msgs::Marker lineMarkerList;
+    visualization_msgs::Marker orgTriList;
+    ros::Rate loop_rate(1);
+    setVisualParametersTriList(triList);
+    setVisualParametersTriList(orgTriList);
+    setVisualParametersLineList(lineMarkerList);
     pcl::io::loadPolygonFileOBJ(path_, pclMesh); // pcl::io::loadPolygonFilePLY(path_, pclMesh);
     ROS_INFO("loaded OBJ file");
     loadAreas(pathAreas_, trilabels);
@@ -89,6 +130,19 @@ struct RecastTest
       ROS_ERROR("Could not build NavMesh");
       return;
     }
+    //boost::shared_ptr<Sample> myMesh = recast_.getMySample(); // get mySample Mesh
+    pcl::PointCloud<pcl::PointXYZ>::Ptr temp;
+    std::vector<Eigen::Vector3d> lineList;
+    pcl::PolygonMesh::Ptr pclMeshPtr;
+    std::vector<unsigned char> areaList;
+
+    if(!recast_.getNavMesh(pclMeshPtr,temp, lineList, areaList))
+      ROS_INFO("FAILED");
+
+
+
+
+
     // test path planning (Detour)
     pcl::PointXYZ start;
     start.x = startX_;
@@ -99,35 +153,83 @@ struct RecastTest
     goal.y = goalY_;
     goal.z = goalZ_;
     std::vector<pcl::PointXYZ> path;
-    pcl::PointCloud<pcl::PointXYZ> tri_verts;
+    pcl::PointCloud<pcl::PointXYZ> polyVerts,triVerts;
 
-    pcl::fromPCLPointCloud2(pclMesh.cloud, tri_verts);
+    pcl::fromPCLPointCloud2(pclMesh.cloud, triVerts);
+    pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
     geometry_msgs::Point p;
+    std_msgs::ColorRGBA c;
 
-    size_t i;
-
-    for(i = 0; i < tri_verts.size() ; i++)
+    for(size_t i = 0; i < triVerts.size(); i++)
     {
-      p.x = tri_verts.at(i).x;
-      p.y = -tri_verts.at(i).z; 
-      p.z = tri_verts.at(i).y;
+     p.x = triVerts.at(i).x;
+     p.y = triVerts.at(i).y; 
+     p.z = triVerts.at(i).z;
 
-      triList.points.push_back(p);
+      c.r = 0.2;
+      c.b = 1;
+      c.g = 0.6;
+      c.a = 1.0;
+
+
+      orgTriList.colors.push_back(c);
+      orgTriList.points.push_back(p);
     }
 
-    std::cout << i << "\n";
+    for(size_t i = 0; i < lineList.size(); i++)
+    {
+      p.x = lineList[i][0];
+      p.y = lineList[i][1];
+      p.z = lineList[i][2];
 
-  while(ros::ok())
+
+      c.a = 1.0;
+      c.r = 0;
+      c.b = 0;
+      c.g = 0;
+
+      lineMarkerList.colors.push_back(c);
+      lineMarkerList.points.push_back(p);
+    }
+
+
+    for(int i = 0; i < polyVerts.size() ; i++)
+    {
+     p.x = polyVerts.at(i).x;
+     p.y = polyVerts.at(i).y; 
+     p.z = polyVerts.at(i).z;
+
+    if(areaList.at(i) == 0x01) {
+      c.r = 0.75294117647;
+      c.b = 0.75294117647;
+      c.g = 0.75294117647;
+    }
+    else if(areaList.at(i) == 0x02) {
+      c.r = 0.25294117647;
+      c.b = 0.25294117647;
+      c.g = 0.25294117647;
+    }
+
+
+      c.a = 1.0;
+
+      triList.colors.push_back(c);
+      triList.points.push_back(p);
+  }
+
+  int j = 0;
+ while(ros::ok() && j < 10000)
   {
-     while (marker_pub.getNumSubscribers() < 1)
+    j++;
+    while (NavMeshPub.getNumSubscribers() < 1)
     {
       ROS_WARN_ONCE("Please create a subscriber to the marker");
-      sleep(1);
     }
-
-
-
-    marker_pub.publish(triList);
+    NavMeshPub.publish(lineMarkerList);
+    NavMeshPub.publish(triList);
+    OriginalMeshPub.publish(orgTriList);
+    ROS_INFO("Published List No %d", j);
+    loop_rate.sleep();
   }
 
     if (!recast_.query(start, goal, path)) { // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
@@ -170,7 +272,8 @@ int main (int argc, char* argv[])
 {
   ros::init(argc, argv, "recast_test_node");
   ros::NodeHandle nodeHandle("~");
-  marker_pub = nodeHandle.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  NavMeshPub = nodeHandle.advertise<visualization_msgs::Marker>("NavMeshPublish", 1);
+  OriginalMeshPub = nodeHandle.advertise<visualization_msgs::Marker>("OriginalMeshPub", 1);
   RecastTest test(nodeHandle);
   test.test();
   return 0;

@@ -39,6 +39,7 @@ bool RecastPlanner::build (const pcl::PolygonMesh& pclMesh, const std::vector<ch
   sample->handleMeshChanged(geom.get());
   sample->handleSettings();
   sample->handleBuild(areaTypes);
+  //TODO: retrun false if fail
   return true;
 }
  bool loadAreas(const std::string& path, std::vector<char>& labels)
@@ -140,11 +141,11 @@ bool RecastPlanner::query (const pcl::PointXYZ& start, const pcl::PointXYZ& end,
   return foundFullPath;
 }
 
-bool RecastPlanner::getNavMesh (pcl::PolygonMesh::Ptr& pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr& pclcloud, std::vector<Eigen::Vector3d>& lineList) const
+bool RecastPlanner::getNavMesh (pcl::PolygonMesh::Ptr& pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr& pclcloud, std::vector<Eigen::Vector3d>& lineList,std::vector<unsigned char> &areaList) const
 {
-  if (!sample) return false;
+  if (!sample) { std::cout << "SampleObj FAILED\n"; return false; }
   const dtNavMesh* mesh = sample->getNavMesh();
-  if (!mesh) return false;
+  if (!mesh) { std::cout << "dtNavMesh FAILED\n"; return false; }
 
   pclmesh.reset( new pcl::PolygonMesh() );
   pclcloud.reset( new pcl::PointCloud<pcl::PointXYZ>() );
@@ -176,6 +177,7 @@ bool RecastPlanner::getNavMesh (pcl::PolygonMesh::Ptr& pclmesh, pcl::PointCloud<
           vert.y =-verts[2];
           vert.z = verts[1];
           pclcloud->points.push_back(vert);
+          areaList.push_back(p->getArea());
         }
       }
     }
@@ -215,13 +217,15 @@ bool RecastPlanner::getNavMesh (pcl::PolygonMesh::Ptr& pclmesh) const
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr pclcloud;
   std::vector<Eigen::Vector3d> lineList;
-  return getNavMesh(pclmesh, pclcloud, lineList);
+  std::vector<unsigned char> areaList;
+  return getNavMesh(pclmesh, pclcloud, lineList, areaList);
 }
 
 bool RecastPlanner::getNavMesh (std::vector<Eigen::Vector3d>& lineList) const
 {
   pcl::PolygonMesh::Ptr pclmesh;
   pcl::PointCloud<pcl::PointXYZ>::Ptr pclcloud;
-  return getNavMesh(pclmesh, pclcloud, lineList);
+  std::vector<unsigned char> areaList;
+  return getNavMesh(pclmesh, pclcloud, lineList, areaList);
 }
 
