@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   visualization_msgs
   pcl_ros
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -46,6 +47,8 @@ file(GLOB RecastSources
   ${RECASTDEMO_DIR}/Source/*.cpp
   src/*.cpp
 )
+include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake) 
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -120,10 +123,9 @@ file(GLOB RecastSources
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+   cfg/recast_node.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -164,9 +166,10 @@ add_library(recast_ros
 # add_dependencies(wabian_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## recast test
-add_executable(recast_test_node src/recast_test_node.cpp)
-add_dependencies(recast_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(recast_test_node
+add_executable(recast_node src/recast_node.cpp)
+add_dependencies(recast_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(recast_node ${PROJECT_NAME}_gencfg)
+target_link_libraries(recast_node
   recast_ros
   ${catkin_LIBRARIES}
 )
