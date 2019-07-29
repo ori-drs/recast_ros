@@ -2,7 +2,7 @@
 <launch>
 
   <!-- load and publish fsc map -->
-  <node pkg="recast_ros" type="recast_test_node" name="recast_test_node" respawn="false" output="screen">
+  <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
   	<param name="path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />
   	<param name="path_areas" value="$(find recast_demos)/data/gridmap_fsc_res5cm.dat" />
   	<param name="start_x" value="0.0" />
