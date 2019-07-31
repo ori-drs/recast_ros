@@ -239,6 +239,7 @@ bool Sample::handleBuild(const std::vector<char> & areaTypes)
 {
 	return true;
 }
+
 /*
 void Sample::handleUpdate(const float dt)
 {

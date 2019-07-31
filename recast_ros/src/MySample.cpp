@@ -359,7 +359,14 @@ void MySample::handleMeshChanged(class InputGeom* geom)
 	initToolStates(this);
 */
 }
-
+/*float MySample::getMyAreaCost(const int &index)
+{ 
+	return m_filter->getAreaCost(index); 
+}
+void MySample::setMyAreaCost(const int &index, const int &cost)
+{ 
+	m_filter->setAreaCost(index, cost); 
+}*/
 
 bool MySample::handleBuild(const std::vector<char> & areaTypes)
 {
@@ -723,6 +730,7 @@ bool MySample::handleBuild(const std::vector<char> & areaTypes)
 			m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh query");
 			return false;
 		}
+
 	}
 	
 	m_ctx->stopTimer(RC_TIMER_TOTAL);
@@ -737,5 +745,8 @@ bool MySample::handleBuild(const std::vector<char> & areaTypes)
 		m_tool->init(this);
 	initToolStates(this);
 */
+
 	return true;
 }
+
+
