@@ -7,9 +7,12 @@ project(recast_ros)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
-  visualization_msgs
   pcl_ros
   dynamic_reconfigure
+  std_msgs
+  geometry_msgs
+  visualization_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -80,18 +83,18 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+ add_message_files(
+    FILES
 #   RosStance.msg
 #   RosPlanningProblem.msg
-# )
+    RecastPathMsg.msg
+ )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ add_service_files(
+   FILES
+   RecastPathSrv.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -101,12 +104,13 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   sensor_msgs
-#   pcl_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+   geometry_msgs
+#  sensor_msgs
+#  pcl_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -139,7 +143,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wabian_planner
-  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros
+  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -166,13 +170,19 @@ add_library(recast_ros
 # add_dependencies(wabian_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## recast test
-add_executable(recast_node src/recast_node.cpp)
-add_dependencies(recast_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(recast_node ${PROJECT_NAME}_gencfg)
-target_link_libraries(recast_node
-  recast_ros
-  ${catkin_LIBRARIES}
-)
+
+add_executable(recast_node src/nodes/recast_node.cpp)
+target_link_libraries(recast_node recast_ros ${catkin_LIBRARIES})
+add_dependencies(recast_node  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
+
+add_executable(recast_client_node src/nodes/recast_client_node.cpp)
+target_link_libraries(recast_client_node ${catkin_LIBRARIES})
+add_dependencies(recast_client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+
+
 
 #############
 ## Install ##

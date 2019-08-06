@@ -64,7 +64,7 @@ bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &
   return build(pclMesh, areaTypes);
 }
 
-bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const float *areaCostList, const int& areaTypeCount)
+bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float>& areaCostList, const int& areaTypeCount)
 {
   if (!sample)
     return false;

@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
+
+
+  <!-- Start Rviz f and Dynamic Reconfiguration or NavMesh -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find recast_demos)/rviz/recast_node_rvizCfg.rviz" />
+  <node name="rqt_gui" pkg="rqt_reconfigure" type="rqt_reconfigure"/>
   <!-- load and publish fsc map -->
   <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
   	<param name="path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />

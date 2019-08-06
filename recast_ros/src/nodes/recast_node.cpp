@@ -6,6 +6,8 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <dynamic_reconfigure/server.h>
+//#include "recast_ros/RecastPathMsg.h"
+#include "recast_ros/RecastPathSrv.h"
 #include <ros/package.h>
 #include <algorithm>
 #include <iostream>
@@ -13,14 +15,9 @@
 #include <vector>
 #include <fstream>
 
-ros::Publisher NavMeshPub;
-ros::Publisher OriginalMeshPub;
-float * areaCostList_; // Terrain Type 0 - 20, 21 Area Types total
-
-
 struct RecastNode
 {
-  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle)//, areaCostList_(new float[noAreaTypes_])
+  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), loopRate_(1)
   {
     // ros params
     std::string base = ros::package::getPath("recast_demos");
@@ -40,10 +37,17 @@ struct RecastNode
     nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41f);
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0f);
 
+    // ros publishers
+    NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("NavMeshPublish", 1);
+    OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("OriginalMeshPub", 1);
+
+    // create service (server & client)
+    service_ = nodeHandle_.advertiseService("RecastPathSrv", &RecastNode::findPathService, this);
+
     for (size_t i = 0; i < noAreaTypes_; i++)
     {
       temp1 = temp + boost::to_string(i) + "_COST";
-      nodeHandle_.param(temp1, areaCostList_[i], 5.0f);
+      nodeHandle_.param(temp1, areaCostList_[i], 1.0f);
     }
     // recast settings
     recast_.stg.cellSize = cellSize_;
@@ -53,7 +57,6 @@ struct RecastNode
     recast_.stg.agentMaxClimb = agentMaxClimb_;
     recast_.stg.agentMaxSlope = agentMaxSlope_;
   }
- // ~RecastNode() {delete [] areaCostList_;  std::cout << "Destructor has been called\n"; }
 
   void setVisualParametersTriList(visualization_msgs::Marker &v) // Constructs a marker of Triangle List
   {
@@ -239,32 +242,132 @@ struct RecastNode
     agentMaxClimb_ = config.agent_max_climb;
     agentMaxSlope_ = config.agent_max_slope;
 
-    areaCostList_[0] = config.TERRAIN_TYPE0_COST;
-    areaCostList_[1] = config.TERRAIN_TYPE1_COST;
-    areaCostList_[2] = config.TERRAIN_TYPE2_COST;
-    areaCostList_[3] = config.TERRAIN_TYPE3_COST;
-    areaCostList_[4] = config.TERRAIN_TYPE4_COST;
-    areaCostList_[5] = config.TERRAIN_TYPE5_COST;
-    areaCostList_[6] = config.TERRAIN_TYPE6_COST;
-    areaCostList_[7] = config.TERRAIN_TYPE7_COST;
-    areaCostList_[8] = config.TERRAIN_TYPE8_COST;
-    areaCostList_[9] = config.TERRAIN_TYPE9_COST;
-    areaCostList_[10] = config.TERRAIN_TYPE10_COST;
-    areaCostList_[11] = config.TERRAIN_TYPE11_COST;
-    areaCostList_[12] = config.TERRAIN_TYPE12_COST;
-    areaCostList_[13] = config.TERRAIN_TYPE13_COST;
-    areaCostList_[14] = config.TERRAIN_TYPE14_COST;
-    areaCostList_[15] = config.TERRAIN_TYPE15_COST;
-    areaCostList_[16] = config.TERRAIN_TYPE16_COST;
-    areaCostList_[17] = config.TERRAIN_TYPE17_COST;
-    areaCostList_[18] = config.TERRAIN_TYPE18_COST;
-    areaCostList_[19] = config.TERRAIN_TYPE19_COST;
-    areaCostList_[20] = config.TERRAIN_TYPE20_COST;
+    if (areaCostList_.size() > 0)
+      areaCostList_[0] = config.TERRAIN_TYPE0_COST;
+    if (areaCostList_.size() > 1)
+      areaCostList_[1] = config.TERRAIN_TYPE1_COST;
+    if (areaCostList_.size() > 2)
+      areaCostList_[2] = config.TERRAIN_TYPE2_COST;
+    if (areaCostList_.size() > 3)
+      areaCostList_[3] = config.TERRAIN_TYPE3_COST;
+    if (areaCostList_.size() > 4)
+      areaCostList_[4] = config.TERRAIN_TYPE4_COST;
+    if (areaCostList_.size() > 5)
+      areaCostList_[5] = config.TERRAIN_TYPE5_COST;
+    if (areaCostList_.size() > 6)
+      areaCostList_[6] = config.TERRAIN_TYPE6_COST;
+    if (areaCostList_.size() > 7)
+      areaCostList_[7] = config.TERRAIN_TYPE7_COST;
+    if (areaCostList_.size() > 8)
+      areaCostList_[8] = config.TERRAIN_TYPE8_COST;
+    if (areaCostList_.size() > 9)
+      areaCostList_[9] = config.TERRAIN_TYPE9_COST;
+    if (areaCostList_.size() > 10)
+      areaCostList_[10] = config.TERRAIN_TYPE10_COST;
+    if (areaCostList_.size() > 11)
+      areaCostList_[11] = config.TERRAIN_TYPE11_COST;
+    if (areaCostList_.size() > 12)
+      areaCostList_[12] = config.TERRAIN_TYPE12_COST;
+    if (areaCostList_.size() > 13)
+      areaCostList_[13] = config.TERRAIN_TYPE13_COST;
+    if (areaCostList_.size() > 14)
+      areaCostList_[14] = config.TERRAIN_TYPE14_COST;
+    if (areaCostList_.size() > 15)
+      areaCostList_[15] = config.TERRAIN_TYPE15_COST;
+    if (areaCostList_.size() > 16)
+      areaCostList_[16] = config.TERRAIN_TYPE16_COST;
+    if (areaCostList_.size() > 17)
+      areaCostList_[17] = config.TERRAIN_TYPE17_COST;
+    if (areaCostList_.size() > 18)
+      areaCostList_[18] = config.TERRAIN_TYPE18_COST;
+    if (areaCostList_.size() > 19)
+      areaCostList_[19] = config.TERRAIN_TYPE19_COST;
+    if (areaCostList_.size() > 20)
+      areaCostList_[20] = config.TERRAIN_TYPE20_COST;
 
     updateMeshCheck_ = true;
   }
+  bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
+  {
+    //Get Input
+    ROS_INFO("Input positions are;");
+    startX_ = req.startXYZ.x;
+    startY_ = req.startXYZ.y;
+    startZ_ = req.startXYZ.z;
+    ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
+    goalX_ = req.goalXYZ.x;
+    goalY_ = req.goalXYZ.y;
+    goalZ_ = req.goalXYZ.z;
+    ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
+    // test path planning (Detour)
+    std::vector<pcl::PointXYZ> path;
+    pcl::PointXYZ start;
+    start.x = startX_;
+    start.y = startY_;
+    start.z = startZ_;
+    pcl::PointXYZ goal;
+    goal.x = goalX_;
+    goal.y = goalY_;
+    goal.z = goalZ_;
 
-  void test()
+    // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
+    bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_);
+
+    if (!checkStatus)
+    {
+      ROS_ERROR("Could not obtain shortest path");
+      return checkStatus;
+    }
+    ROS_INFO("success");
+
+    for (unsigned int i = 0; i < path.size(); i++)
+    {
+      ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
+      res.pathSrv[i].x = path[i].x;
+      res.pathSrv[i].x = path[i].y;
+      res.pathSrv[i].x = path[i].z;
+    }
+
+    return checkStatus;
+  }
+
+  bool findPath()
+  {
+    //Get Input
+    ROS_INFO("Input positions are;");
+
+    ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
+    ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
+    // test path planning (Detour)
+    std::vector<pcl::PointXYZ> path;
+    pcl::PointXYZ start;
+    start.x = startX_;
+    start.y = startY_;
+    start.z = startZ_;
+    pcl::PointXYZ goal;
+    goal.x = goalX_;
+    goal.y = goalY_;
+    goal.z = goalZ_;
+
+    // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
+    bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_);
+
+    if (!checkStatus)
+    {
+      ROS_ERROR("Could not obtain shortest path");
+      return checkStatus;
+    }
+    ROS_INFO("success");
+
+    for (unsigned int i = 0; i < path.size(); i++)
+    {
+      ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
+    }
+
+    return checkStatus;
+  }
+
+  void run()
   {
     // load
     pcl::PolygonMesh pclMesh;
@@ -273,7 +376,8 @@ struct RecastNode
     ROS_INFO("loaded OBJ file");
     loadAreas(pathAreas_, trilabels);
     ROS_INFO("loaded AREAS file");
-    // build NavMesh. TODO: use trilabels in the construction, DONE
+
+    // build NavMesh
     if (!recast_.build(pclMesh, trilabels))
     {
       ROS_ERROR("Could not build NavMesh");
@@ -283,14 +387,20 @@ struct RecastNode
     std::vector<Eigen::Vector3d> lineList;
     pcl::PolygonMesh::Ptr pclMeshPtr;
     std::vector<unsigned char> areaList;
-
     if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
       ROS_INFO("FAILED");
-    //Visualization
+
+    // Dynamic Reconfiguration start
+    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
+    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType f;
+    f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
+    server.setCallback(f);
+
+    // Visualization
     visualization_msgs::Marker triList;
     visualization_msgs::Marker lineMarkerList;
     visualization_msgs::Marker orgTriList;
-    ros::Rate loop_rate(1);
+
     setVisualParametersTriList(triList);
     setVisualParametersTriList(orgTriList);
     setVisualParametersLineList(lineMarkerList);
@@ -300,27 +410,26 @@ struct RecastNode
     pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
 
     buildNavMeshVisualization(triList, lineMarkerList, orgTriList, polyVerts, triVerts, lineList, areaList);
-    // Dynamic Reconfiguration start -- TODO: Take these callbacks to main
-    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
-    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType f;
-    f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
-    server.setCallback(f);
-    // Dynamic Reconfiguration end
-    int j = 0;
 
-    while (ros::ok() && j < 15)
+    // infinite loop
+    std::vector<int> listCount = {0, 0, 0}; // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
+    while (ros::ok())
     {
-      j++;
-      while (NavMeshPub.getNumSubscribers() < 1) // Check Rviz subscribers
-      {
-        ROS_WARN_ONCE("Please create a subscriber to the marker");
-      }
       // Publish lists
-      NavMeshPub.publish(lineMarkerList);
-      NavMeshPub.publish(triList);
-      OriginalMeshPub.publish(orgTriList);
-      ROS_INFO("Published List set (Navigation Mesh Line List, Navigation Mesh Triangle List, Original Mesh Triangle List) No %d", j);
-      ros::spinOnce(); // check changes in config
+      if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+      {
+        ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
+        ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
+        NavMeshPub_.publish(lineMarkerList);
+        NavMeshPub_.publish(triList);
+      }
+
+      if (OriginalMeshPub_.getNumSubscribers() >= 1)
+      {
+        ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]);
+        OriginalMeshPub_.publish(orgTriList);
+        listCount[1]++;
+      }
 
       if (updateMeshCheck_)
       {
@@ -349,40 +458,25 @@ struct RecastNode
         buildNavMeshVisualization(triList, lineMarkerList, orgTriList, polyVerts, triVerts, lineList, areaList);
         updateMeshCheck_ = false; // clear update requirement flag
       }
+      ros::spinOnce(); // check changes in config
+      loopRate_.sleep();
 
-      loop_rate.sleep();
+      if(findPath())
+        ROS_INFO("Success");
+
     }
-
-    // test path planning (Detour)
-    std::vector<pcl::PointXYZ> path;
-    pcl::PointXYZ start;
-    start.x = startX_;
-    start.y = startY_;
-    start.z = startZ_;
-    pcl::PointXYZ goal;
-    goal.x = goalX_;
-    goal.y = goalY_;
-    goal.z = goalZ_;
-
-    if (!recast_.query(start, goal, path, areaCostList_, noAreaTypes_))
-    { // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
-      ROS_ERROR("Could not obtain shortest path");
-      return;
-    }
-    ROS_INFO("success");
-
-    for (unsigned int i = 0; i < path.size(); i++)
-    {
-      ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
-    }
-
-    //  delete[] areaCostList_;
   }
 
+  // ros tools
   ros::NodeHandle nodeHandle_;
-  std::string path_;
+  ros::Publisher NavMeshPub_;
+  ros::Publisher OriginalMeshPub_;
+  ros::Rate loopRate_;
+  ros::ServiceServer service_;
+      std::string path_;
   std::string pathAreas_;
   recastapp::RecastPlanner recast_;
+  // path planner settings
   double startX_;
   double startY_;
   double startZ_;
@@ -396,20 +490,17 @@ struct RecastNode
   float agentRadius_;
   float agentMaxClimb_;
   float agentMaxSlope_;
-  static const int noAreaTypes_ = 21;       // Number of Area Types
-  bool updateMeshCheck_ = false;     // private flag to check whether a map update required or not
+  const int noAreaTypes_ = 21;      // Number of Area Types
+  std::vector<float> areaCostList_; 
+  bool updateMeshCheck_ = false;    // private flag to check whether a map update required or not
 };
 
 int main(int argc, char *argv[])
-{ 
-  areaCostList_ = new float[21];
+{
   ros::init(argc, argv, "recast_node");
   ros::NodeHandle nodeHandle("~");
   RecastNode rcNode(nodeHandle);
-  NavMeshPub = nodeHandle.advertise<visualization_msgs::Marker>("NavMeshPublish", 1);
-  OriginalMeshPub = nodeHandle.advertise<visualization_msgs::Marker>("OriginalMeshPub", 1);
 
-  rcNode.test();
-  delete [] areaCostList_;
+  rcNode.run();
   return 0;
 }
