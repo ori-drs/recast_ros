@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 
         if (client.call(srv))
         {
-            std::vector<geometry_msgs::Point> path = srv.response.pathSrv;
+            std::vector<geometry_msgs::Point> path = srv.response.path;
             for (unsigned int i = 0; i < path.size(); i++)
             {
                 ROS_INFO("recevied path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);

@@ -1,7 +1,7 @@
 #include "recast_ros/RecastPlanner.h"
 #include "recast_ros/recast_nodeConfig.h"
-#include "recast_ros/RecastPathSrv.h"
-#include "recast_ros/RecastPathMsg.h"
+#include "recast_ros/recast_path_planning.h"
+#include "recast_ros/recast_path_coords.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/vtk_lib_io.h>
@@ -69,7 +69,7 @@ struct RecastNode
     }; //Dark Olive Green
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("recast_path_planning", &RecastNode::findPathService, this);
 
     for (size_t i = 0; i < noAreaTypes_; i++)
     {
@@ -299,7 +299,7 @@ struct RecastNode
     updateMeshCheck_ = true;
   }
 
-  bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
+  bool findPathService(recast_ros::recast_path_planning::Request &req, recast_ros::recast_path_planning::Response &res)
   {
     //Get Input
     ROS_INFO("Input positions are;");

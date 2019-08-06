@@ -87,13 +87,13 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
     FILES
 #   RosStance.msg
 #   RosPlanningProblem.msg
-   RecastPathMsg.msg
+   recast_path_coords.msg
  )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
-   RecastPathSrv.srv
+   recast_path_planning.srv
  )
 
 ## Generate actions in the 'action' folder
