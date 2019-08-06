@@ -87,13 +87,13 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
     FILES
 #   RosStance.msg
 #   RosPlanningProblem.msg
-    recast_path_coords.msg
+   RecastPathMsg.msg
  )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
-   recast_path_planning.srv
+   RecastPathSrv.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -176,9 +176,9 @@ target_link_libraries(recast_node recast_ros ${catkin_LIBRARIES})
 add_dependencies(recast_node  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
 
-add_executable(recast_client_node src/nodes/recast_client_node.cpp)
-target_link_libraries(recast_client_node ${catkin_LIBRARIES})
-add_dependencies(recast_client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(test_planning_service src/nodes/test_planning_service.cpp)
+target_link_libraries(test_planning_service ${catkin_LIBRARIES})
+add_dependencies(test_planning_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 

@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "recast_client_node");
+    ros::init(argc, argv, "test_planning_service");
 
     ros::NodeHandle clientNode("~");
     ros::ServiceClient client = clientNode.serviceClient<recast_ros::recast_path_planning>("/recast_node/recast_path_planning");
