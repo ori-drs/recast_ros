@@ -1,0 +1,2 @@
+geometry_msgs/Point[] startXYZ
+geometry_msgs/Point[] goalXYZ
