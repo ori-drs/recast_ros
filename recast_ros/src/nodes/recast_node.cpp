@@ -6,8 +6,8 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <dynamic_reconfigure/server.h>
-//#include "recast_ros/RecastPathMsg.h"
-#include "recast_ros/RecastPathSrv.h"
+#include "recast_ros/recast_path_coords.h"
+#include "recast_ros/recast_path_planning.h"
 #include <ros/package.h>
 #include <algorithm>
 #include <iostream>
@@ -42,7 +42,7 @@ struct RecastNode
     OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("OriginalMeshPub", 1);
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("RecastPathSrv", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("recast_path_planning", &RecastNode::findPathService, this);
 
     for (size_t i = 0; i < noAreaTypes_; i++)
     {
@@ -60,7 +60,7 @@ struct RecastNode
 
   void setVisualParametersTriList(visualization_msgs::Marker &v) // Constructs a marker of Triangle List
   {
-    v.header.frame_id = "/my_frame";
+    v.header.frame_id = "map";
     v.type = visualization_msgs::Marker::TRIANGLE_LIST;
     v.header.stamp = ros::Time::now();
 
@@ -94,7 +94,7 @@ struct RecastNode
   }
   void setVisualParametersLineList(visualization_msgs::Marker &v) // Constructs a marker of Line List
   {
-    v.header.frame_id = "/my_frame";
+    v.header.frame_id = "map";
     v.type = visualization_msgs::Marker::LINE_LIST;
     v.header.stamp = ros::Time::now();
 
@@ -287,7 +287,7 @@ struct RecastNode
 
     updateMeshCheck_ = true;
   }
-  bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
+  bool findPathService(recast_ros::recast_path_planning::Request &req, recast_ros::recast_path_planning::Response &res)
   {
     //Get Input
     ROS_INFO("Input positions are;");
@@ -320,18 +320,19 @@ struct RecastNode
     }
     ROS_INFO("success");
 
+    res.pathSrv.resize(path.size());
     for (unsigned int i = 0; i < path.size(); i++)
     {
       ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
       res.pathSrv[i].x = path[i].x;
-      res.pathSrv[i].x = path[i].y;
-      res.pathSrv[i].x = path[i].z;
+      res.pathSrv[i].y = path[i].y;
+      res.pathSrv[i].z = path[i].z;
     }
 
-    return checkStatus;
+    return true;
   }
 
-  bool findPath()
+  bool findPathManual()
   {
     //Get Input
     ROS_INFO("Input positions are;");
@@ -458,12 +459,8 @@ struct RecastNode
         buildNavMeshVisualization(triList, lineMarkerList, orgTriList, polyVerts, triVerts, lineList, areaList);
         updateMeshCheck_ = false; // clear update requirement flag
       }
-      ros::spinOnce(); // check changes in config
+      ros::spinOnce(); // check changes in ros network
       loopRate_.sleep();
-
-      if(findPath())
-        ROS_INFO("Success");
-
     }
   }
 
@@ -473,7 +470,7 @@ struct RecastNode
   ros::Publisher OriginalMeshPub_;
   ros::Rate loopRate_;
   ros::ServiceServer service_;
-      std::string path_;
+  std::string path_;
   std::string pathAreas_;
   recastapp::RecastPlanner recast_;
   // path planner settings

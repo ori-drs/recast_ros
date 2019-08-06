@@ -80,11 +80,9 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   int npolys = 0;
   int nstraight = 0;
 
-  std::cout << "Before\n";
   dtQueryFilter filter;
   filter.setIncludeFlags(0x3);
   filter.setExcludeFlags(0x0);
-  std::cout << "After\n";
 
   
   for (int index = 0; index < areaTypeCount; index++)
