@@ -57,7 +57,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /recast_node/NavMeshPublish
+      Marker Topic: /recast_node/navigation_mesh
       Name: Marker
       Namespaces:
         Lines: true
@@ -66,7 +66,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: false
-      Marker Topic: /recast_node/OriginalMeshPub
+      Marker Topic: /recast_node/original_mesh
       Name: Marker
       Namespaces:
         {}

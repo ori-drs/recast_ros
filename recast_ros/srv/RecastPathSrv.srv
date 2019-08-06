@@ -1,4 +1,4 @@
 geometry_msgs/Point startXYZ
 geometry_msgs/Point goalXYZ
 ---
-geometry_msgs/Point[] pathSrv
+geometry_msgs/Point[] path

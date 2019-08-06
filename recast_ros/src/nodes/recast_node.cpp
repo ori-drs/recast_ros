@@ -1,13 +1,13 @@
 #include "recast_ros/RecastPlanner.h"
 #include "recast_ros/recast_nodeConfig.h"
+#include "recast_ros/RecastPathSrv.h"
+#include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/vtk_lib_io.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <dynamic_reconfigure/server.h>
-#include "recast_ros/recast_path_coords.h"
-#include "recast_ros/recast_path_planning.h"
 #include <ros/package.h>
 #include <algorithm>
 #include <iostream>
@@ -17,7 +17,7 @@
 
 struct RecastNode
 {
-  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(1)
+  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(100.0)
   {
     // ros params
     std::string base = ros::package::getPath("recast_demos");
@@ -38,9 +38,9 @@ struct RecastNode
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0f);
 
     // ros publishers
-    NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("NavMeshPublish", 1);
-    OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("OriginalMeshPub", 1);
-    RecastPathPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("RecastPathPub", 1);
+    NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
+    OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("original_mesh", 1);
+    RecastPathPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_lines", 1);
 
     // create colour list for area types
     colourList_ = {
@@ -69,7 +69,7 @@ struct RecastNode
     }; //Dark Olive Green
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("recast_path_planning", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
 
     for (size_t i = 0; i < noAreaTypes_; i++)
     {
@@ -139,6 +139,7 @@ struct RecastNode
 
     v.lifetime = ros::Duration();
   }
+
   bool updateNavMesh(recastapp::RecastPlanner &recast_, const pcl::PolygonMesh &pclMesh, const std::vector<char> &trilabels) // Update NavMesh settings from dynamic rqt_reconfiguration
   {
     nodeHandle_.setParam("cell_size", cellSize_);
@@ -232,19 +233,6 @@ struct RecastNode
       p.y = polyVerts.at(i).y;
       p.z = polyVerts.at(i).z;
 
-      /*       if (areaList.at(i) == 0x01)
-      {
-        c.r = 0.75294117647;
-        c.b = 0.75294117647;
-        c.g = 0.75294117647;
-      }
-      else if (areaList.at(i) == 0x02)
-      {
-        c.r = 0.8;
-        c.b = 0.0;
-        c.g = 0.0;
-      } */
-
       triList_.colors[i] = colourList_[areaList.at(i)];
       triList_.points[i] = p;
     }
@@ -310,7 +298,8 @@ struct RecastNode
 
     updateMeshCheck_ = true;
   }
-  bool findPathService(recast_ros::recast_path_planning::Request &req, recast_ros::recast_path_planning::Response &res)
+
+  bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
   {
     //Get Input
     ROS_INFO("Input positions are;");
@@ -343,13 +332,13 @@ struct RecastNode
     }
     ROS_INFO("success");
 
-    res.pathSrv.resize(path.size());
+    res.path.resize(path.size());
     for (unsigned int i = 0; i < path.size(); i++)
     {
       ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
-      res.pathSrv[i].x = path[i].x;
-      res.pathSrv[i].y = path[i].y;
-      res.pathSrv[i].z = path[i].z;
+      res.path[i].x = path[i].x;
+      res.path[i].y = path[i].y;
+      res.path[i].z = path[i].z;
     }
     //Last Path Visualization
     setVisualParameters(pathList_, visualization_msgs::Marker::LINE_LIST, "Path Lines", 0);
