@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /Marker1
         - /Marker2
+        - /Marker3
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz/Selection
@@ -71,6 +72,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/RecastPathPub
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -136,4 +145,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 973
-  Y: 164
+  Y: 134
