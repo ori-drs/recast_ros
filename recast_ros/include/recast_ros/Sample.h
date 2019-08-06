@@ -56,19 +56,35 @@ enum TerrainTypes
 	TERRAIN_TYPE0,
 	TERRAIN_TYPE1,
 	TERRAIN_TYPE2,
-	TERRAIN_TYPE3
+	TERRAIN_TYPE3,
+	TERRAIN_TYPE4,
+	TERRAIN_TYPE5,
+	TERRAIN_TYPE6,
+	TERRAIN_TYPE7,
+	TERRAIN_TYPE8,
+	TERRAIN_TYPE9,
+	TERRAIN_TYPE10,
+	TERRAIN_TYPE11,
+	TERRAIN_TYPE12,
+	TERRAIN_TYPE13,
+	TERRAIN_TYPE14,
+	TERRAIN_TYPE15,
+	TERRAIN_TYPE16,
+	TERRAIN_TYPE17,
+	TERRAIN_TYPE18,
+	TERRAIN_TYPE19,
+	TERRAIN_TYPE20
 	// ... can have # Terrain Types up to RC_WALKABLE_AREAS (see Recast.h) # Terrain Types <= RC_WALKABLE_AREAS
 };
 
-
 enum SamplePolyFlags
 {
-	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
-	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
-	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
-	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
-	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
-	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
+	SAMPLE_POLYFLAGS_WALK = 0x01,	 // Ability to walk (ground, grass, road)
+	SAMPLE_POLYFLAGS_SWIM = 0x02,	 // Ability to swim (water).
+	SAMPLE_POLYFLAGS_DOOR = 0x04,	 // Ability to move through doors.
+	SAMPLE_POLYFLAGS_JUMP = 0x08,	 // Ability to jump.
+	SAMPLE_POLYFLAGS_DISABLED = 0x10, // Disabled polygon
+	SAMPLE_POLYFLAGS_ALL = 0xffff	 // All abilities.
 };
 
 enum SamplePartitionType
@@ -105,9 +121,10 @@ struct SampleToolState {
 class Sample
 {
 protected:
-	class InputGeom* m_geom;
-	class dtNavMesh* m_navMesh;
-	class dtNavMeshQuery* m_navQuery;
+	class InputGeom *m_geom;
+	class dtNavMesh *m_navMesh;
+	class dtNavMeshQuery *m_navQuery;
+//	class dtQueryFilter *m_filter;
 	//class dtCrowd* m_crowd;
 
 	//unsigned char m_navMeshDrawFlags;
@@ -126,22 +143,22 @@ protected:
 	float m_detailSampleDist;
 	float m_detailSampleMaxError;
 	int m_partitionType;
-	
+
 	//SampleTool* m_tool;
 	//SampleToolState* m_toolStates[MAX_TOOLS];
-	
-	BuildContext* m_ctx;
-	
+
+	BuildContext *m_ctx;
+
 public:
 	Sample();
 	virtual ~Sample();
-	
-	void setContext(BuildContext* ctx) { m_ctx = ctx; }
-	
+
+	void setContext(BuildContext *ctx) { m_ctx = ctx; }
+
 	//void setTool(SampleTool* tool);
 	//SampleToolState* getToolState(int type) { return m_toolStates[type]; }
 	//void setToolState(int type, SampleToolState* s) { m_toolStates[type] = s; }
-	
+
 	virtual void handleSettings();
 	//virtual void handleTools();
 	//virtual void handleDebugMode();
@@ -150,19 +167,22 @@ public:
 	//virtual void handleStep();
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom* geom);
-	virtual bool handleBuild(const std::vector<char> & areaTypes);
+	virtual void handleMeshChanged(class InputGeom *geom);
+	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	//virtual void handleUpdate(const float dt);
-	virtual void collectSettings(struct BuildSettings& settings);
+	virtual void collectSettings(struct BuildSettings &settings);
 
-	virtual class InputGeom* getInputGeom() { return m_geom; }
-	virtual class dtNavMesh* getNavMesh() { return m_navMesh; }
-	virtual class dtNavMeshQuery* getNavMeshQuery() { return m_navQuery; }
+	virtual class InputGeom *getInputGeom() { return m_geom; }
+	virtual class dtNavMesh *getNavMesh() { return m_navMesh; }
+	virtual class dtNavMeshQuery *getNavMeshQuery() { return m_navQuery; }
 	//virtual class dtCrowd* getCrowd() { return m_crowd; }
 	virtual float getAgentRadius() { return m_agentRadius; }
 	virtual float getAgentHeight() { return m_agentHeight; }
 	virtual float getAgentClimb() { return m_agentMaxClimb; }
-	
+
+//	virtual float getMyAreaCost(const int &index);
+//	virtual void  setMyAreaCost(const int &index, const int &cost);
+
 	//unsigned char getNavMeshDrawFlags() const { return m_navMeshDrawFlags; }
 	//void setNavMeshDrawFlags(unsigned char flags) { m_navMeshDrawFlags = flags; }
 
@@ -177,9 +197,8 @@ public:
 
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
-	Sample(const Sample&);
-	Sample& operator=(const Sample&);
+	Sample(const Sample &);
+	Sample &operator=(const Sample &);
 };
-
 
 #endif // RECASTSAMPLE_H

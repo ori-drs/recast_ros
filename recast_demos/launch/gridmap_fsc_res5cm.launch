@@ -18,6 +18,7 @@
   <node pkg="recast_demos" type="gridmap_save_node" name="gridmap_save_node" respawn="true" output="screen">
   	<param name="input_topic" value="/gridmap_fsc_demo_node/map_filtered" />
   	<param name="save_path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />
+	<param name="save_path_rotated" value="$(find recast_demos)/data/gridmap_fsc_res5cm_rotated.obj" />
   	<param name="save_path_areas" value="$(find recast_demos)/data/gridmap_fsc_res5cm.dat" />
   </node>
 

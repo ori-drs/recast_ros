@@ -28,15 +28,14 @@ class MySample : public Sample
 protected:
 	bool m_keepInterResults;
 	float m_totalBuildTimeMs;
-
-	unsigned char* m_triareas;
-	rcHeightfield* m_solid;
-	rcCompactHeightfield* m_chf;
-	rcContourSet* m_cset;
-	rcPolyMesh* m_pmesh;
-	rcConfig m_cfg;	
-	rcPolyMeshDetail* m_dmesh;
-/*	
+	rcPolyMesh *m_pmesh;
+	unsigned char *m_triareas;
+	rcHeightfield *m_solid;
+	rcCompactHeightfield *m_chf;
+	rcContourSet *m_cset;
+	rcConfig m_cfg;
+	rcPolyMeshDetail *m_dmesh;
+	/*	
 	enum DrawMode
 	{
 		DRAWMODE_NAVMESH,
@@ -62,25 +61,27 @@ protected:
 	DrawMode m_drawMode;
 */
 	void cleanup();
-		
+
 public:
 	MySample();
 	virtual ~MySample();
-	
+
 	virtual void handleSettings();
 	//virtual void handleTools();
 	//virtual void handleDebugMode();
-	
+
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom* geom);
-	virtual bool handleBuild(const std::vector<char> & areaTypes);
+	virtual void handleMeshChanged(class InputGeom *geom);
+	virtual bool handleBuild(const std::vector<char> &areaTypes);
+//	virtual void setMyAreaCost(const int &index, const int &cost);
+//	virtual float getMyAreaCost(const int &index);
+
 
 private:
 	// Explicitly disabled copy constructor and copy assignment operator.
-	MySample(const MySample&);
-	MySample& operator=(const MySample&);
+	MySample(const MySample &);
+	MySample &operator=(const MySample &);
 };
-
 
 #endif // RECASTSAMPLESOLOMESHSIMPLE_H

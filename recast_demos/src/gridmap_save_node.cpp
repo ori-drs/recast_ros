@@ -24,6 +24,7 @@ struct Save
     std::string base = ros::package::getPath("recast_demos");
     nodeHandle_.param("input_topic", inputTopic_, std::string("/gridmap_fsc_demo_node/map_filtered"));
     nodeHandle_.param("save_path", savePath_, base+std::string("/data/map.obj"));
+    nodeHandle_.param("save_path_rotated", savePathRotated_, base+std::string("/data/map_rotated.obj"));
     nodeHandle_.param("save_path_areas", savePathAreas_, base+std::string("/data/map.csv"));
     subscriber_ = nodeHandle_.subscribe(inputTopic_, 1, &Save::callback, this);
   }
@@ -39,20 +40,24 @@ struct Save
     convert(gridMap, pclMesh, trilabels);
     ROS_INFO("converted to pcl");
     // change coords
+    pcl::PolygonMesh pclMeshRotated = pclMesh;
     pcl::PointCloud<pcl::PointXYZ> temp, temp0; // temp array
-    pcl::fromPCLPointCloud2(pclMesh.cloud, temp);
-    pcl::fromPCLPointCloud2(pclMesh.cloud, temp0);
-    for(int i = 0; i < temp.size(); i++)
+    //pcl::fromPCLPointCloud2(pclMeshRotated.cloud, temp);
+    pcl::fromPCLPointCloud2(pclMeshRotated.cloud, temp0);
+    for(int i = 0; i < temp0.size(); i++)
     {
       //temp0.at(i).x = temp.at(i).x; // keep X same | not needed.
       // Update Y and Z
-      temp0.at(i).y = temp.at(i).z;
-      temp0.at(i).z = -temp.at(i).y;
+      double tmpy = temp0.at(i).y;
+      temp0.at(i).y = temp0.at(i).z;
+      temp0.at(i).z = -tmpy;
     }
-    pcl::toPCLPointCloud2(temp0, pclMesh.cloud);
+    pcl::toPCLPointCloud2(temp0, pclMeshRotated.cloud);
     // save to file
     pcl::io::saveOBJFile(savePath_, pclMesh); // pcl::io::savePLYFile(savePath_, pclMesh);
     ROS_INFO("saved OBJ to file");
+    pcl::io::saveOBJFile(savePathRotated_, pclMeshRotated); // pcl::io::savePLYFile(savePath_, pclMesh);
+    ROS_INFO("saved OBJ (rotated) to file");
     saveAreas(savePathAreas_, trilabels);
     ROS_INFO("saved AREAS to file");
     // test
@@ -180,7 +185,9 @@ struct Save
   ros::Subscriber subscriber_;
   std::string inputTopic_;
   std::string savePath_;
+  std::string savePathRotated_;
   std::string savePathAreas_;
+  
 };
 
 

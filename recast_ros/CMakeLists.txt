@@ -7,8 +7,12 @@ project(recast_ros)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
-  visualization_msgs
   pcl_ros
+  dynamic_reconfigure
+  std_msgs
+  geometry_msgs
+  visualization_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -46,6 +50,8 @@ file(GLOB RecastSources
   ${RECASTDEMO_DIR}/Source/*.cpp
   src/*.cpp
 )
+include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake) 
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -77,18 +83,18 @@ file(GLOB RecastSources
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+ add_message_files(
+    FILES
 #   RosStance.msg
 #   RosPlanningProblem.msg
-# )
+    recast_path_coords.msg
+ )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ add_service_files(
+   FILES
+   recast_path_planning.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -98,12 +104,13 @@ file(GLOB RecastSources
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   sensor_msgs
-#   pcl_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+   geometry_msgs
+#  sensor_msgs
+#  pcl_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -120,10 +127,9 @@ file(GLOB RecastSources
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+   cfg/recast_node.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -137,7 +143,7 @@ file(GLOB RecastSources
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wabian_planner
-  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros
+  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -164,12 +170,19 @@ add_library(recast_ros
 # add_dependencies(wabian_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## recast test
-add_executable(recast_test_node src/recast_test_node.cpp)
-add_dependencies(recast_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(recast_test_node
-  recast_ros
-  ${catkin_LIBRARIES}
-)
+
+add_executable(recast_node src/nodes/recast_node.cpp)
+target_link_libraries(recast_node recast_ros ${catkin_LIBRARIES})
+add_dependencies(recast_node  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
+
+add_executable(recast_client_node src/nodes/recast_client_node.cpp)
+target_link_libraries(recast_client_node ${catkin_LIBRARIES})
+add_dependencies(recast_client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+
+
 
 #############
 ## Install ##

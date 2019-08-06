@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<launch>
+
+
+
+  <!-- Start Rviz f and Dynamic Reconfiguration or NavMesh -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find recast_demos)/rviz/recast_node_rvizCfg.rviz" />
+  <node name="rqt_gui" pkg="rqt_reconfigure" type="rqt_reconfigure"/>
+  <!-- load and publish fsc map -->
+  <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
+  	<param name="path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />
+  	<param name="path_areas" value="$(find recast_demos)/data/gridmap_fsc_res5cm.dat" />
+  	<param name="start_x" value="0.0" />
+  	<param name="start_y" value="0.0" />
+  	<param name="start_z" value="0.0" />
+  	<param name="goal_x" value="14.0" />
+  	<param name="goal_y" value="16.0" />
+  	<param name="goal_z" value="0.0" />
+    <param name="cell_size" value="0.1f" />
+    <param name="cell_height" value="0.1f" />
+    <param name="agent_height" value="0.7f" />
+    <param name="agent_radius" value="0.2f" />
+    <param name="agent_max_climb" value="0.41f" />
+    <param name="agent_max_slope" value="60.0f" />
+    <param name="TERRAIN_TYPE0_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE1_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE2_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE3_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE4_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE5_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE6_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE7_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE8_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE9_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE10_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE11_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE12_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE13_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE14_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE15_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE16_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE17_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE18_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE19_COST" value="1.0f" />
+    <param name="TERRAIN_TYPE20_COST" value="1.0f" />
+  </node>
+
+</launch>
