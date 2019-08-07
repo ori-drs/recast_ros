@@ -1,7 +1,7 @@
 #include "recast_ros/RecastPlanner.h"
 #include "recast_ros/recast_nodeConfig.h"
-#include "recast_ros/recast_path_planning.h"
-#include "recast_ros/recast_path_coords.h"
+#include "recast_ros/RecastPathSrv.h"
+#include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/vtk_lib_io.h>
@@ -65,11 +65,13 @@ struct RecastNode
         UIntToColor(0xFF7F180D), //Strong Reddish Brown
         UIntToColor(0xFF593315), //Deep Yellowish Brown
         UIntToColor(0xFFF13A13), //Vivid Reddish Orange
-        UIntToColor(0xFF232C16),
-    }; //Dark Olive Green
+        UIntToColor(0xFF232C16), //Dark Olive Green
+    };
+
+    //ROS_INFO("%f %f %f", colourList_[1].r, colourList_[1].g, colourList_[1].b);
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("recast_path_planning", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
 
     for (size_t i = 0; i < noAreaTypes_; i++)
     {
@@ -84,16 +86,15 @@ struct RecastNode
     recast_.stg.agentMaxClimb = agentMaxClimb_;
     recast_.stg.agentMaxSlope = agentMaxSlope_;
   }
+
   std_msgs::ColorRGBA UIntToColor(uint32_t color)
   {
-    std_msgs::ColorRGBA *c = new std_msgs::ColorRGBA;
-
-    c->a = (uint8_t)(color >> 24);
-    c->r = (uint8_t)(color >> 16);
-    c->g = (uint8_t)(color >> 8);
-    c->b = (uint8_t)(color >> 0);
-
-    return *c;
+    std_msgs::ColorRGBA c;
+    c.a = ((double)(color >> 24)) / 255.0;
+    c.r = ((double)(color >> 16)) / 255.0;
+    c.g = ((double)(color >> 8)) / 255.0;
+    c.b = ((double)(color >> 0)) / 255.0;
+    return c;
   }
 
   void setVisualParameters(visualization_msgs::Marker &v, const int &markerType, const std::string &nameSpace, const int &id) // Constructs a marker of Triangle List
@@ -299,7 +300,7 @@ struct RecastNode
     updateMeshCheck_ = true;
   }
 
-  bool findPathService(recast_ros::recast_path_planning::Request &req, recast_ros::recast_path_planning::Response &res)
+  bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
   {
     //Get Input
     ROS_INFO("Input positions are;");

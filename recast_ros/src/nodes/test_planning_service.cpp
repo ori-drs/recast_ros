@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "recast_ros/recast_path_planning.h"
+#include "recast_ros/RecastPathSrv.h"
 #include <pcl/common/io.h>
 #include <cstdlib>
 #include <iostream>
@@ -9,12 +9,12 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "test_planning_service");
 
     ros::NodeHandle clientNode("~");
-    ros::ServiceClient client = clientNode.serviceClient<recast_ros::recast_path_planning>("/recast_node/recast_path_planning");
+    ros::ServiceClient client = clientNode.serviceClient<recast_ros::RecastPathSrv>("/recast_node/path_plan");
 
     geometry_msgs::Point firstArr, secondArr;
     std::vector<double> myCords(6,1);
 
-   for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         myCords[i-1] = atof(argv[i]);
         std::cout << myCords[i-1] << std::endl;
@@ -28,23 +28,23 @@ int main(int argc, char **argv)
     secondArr.y = myCords[4];
     secondArr.z = myCords[5];
     
-    recast_ros::recast_path_planning srv;
+    recast_ros::RecastPathSrv srv;
     srv.request.startXYZ = firstArr;
     srv.request.goalXYZ = secondArr;
 
-        if (client.call(srv))
+    if (client.call(srv))
+    {
+        std::vector<geometry_msgs::Point> path = srv.response.path;
+        for (unsigned int i = 0; i < path.size(); i++)
         {
-            std::vector<geometry_msgs::Point> path = srv.response.path;
-            for (unsigned int i = 0; i < path.size(); i++)
-            {
-                ROS_INFO("recevied path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
-            }
+            ROS_INFO("recevied path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
         }
-        else
-        {
-            ROS_INFO("Failed to receive Path");
-            return 1;
-        }
+    }
+    else
+    {
+        ROS_INFO("Failed to receive Path");
+        return 1;
+    }
 
     return 0;
 }
