@@ -90,10 +90,10 @@ struct RecastNode
   std_msgs::ColorRGBA UIntToColor(uint32_t color)
   {
     std_msgs::ColorRGBA c;
-    c.a = ((double)(color >> 24)) / 255.0;
-    c.r = ((double)(color >> 16)) / 255.0;
-    c.g = ((double)(color >> 8)) / 255.0;
-    c.b = ((double)(color >> 0)) / 255.0;
+    c.a = ((double)((uint8_t)(color >> 24))) / 255.0;
+    c.r = ((double)((uint8_t)(color >> 16))) / 255.0;
+    c.g = ((double)((uint8_t)(color >> 8))) / 255.0;
+    c.b = ((double)((uint8_t)(color >> 0))) / 255.0;
     return c;
   }
 
