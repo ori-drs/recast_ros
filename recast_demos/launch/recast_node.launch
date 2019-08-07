@@ -22,7 +22,7 @@
     <param name="agent_radius" value="0.2f" />
     <param name="agent_max_climb" value="0.41f" />
     <param name="agent_max_slope" value="60.0f" />
-    <param name="TERRAIN_TYPE0_COST" value="1.0f" />
+
     <param name="TERRAIN_TYPE1_COST" value="1.0f" />
     <param name="TERRAIN_TYPE2_COST" value="1.0f" />
     <param name="TERRAIN_TYPE3_COST" value="1.0f" />
