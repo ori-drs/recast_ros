@@ -71,9 +71,9 @@ struct RecastNode
     //ROS_INFO("%f %f %f", colourList_[1].r, colourList_[1].g, colourList_[1].b);
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("path_plan", &RecastNode::findPathService, this);
 
-    for (size_t i = 0; i < noAreaTypes_; i++)
+    for (size_t i = 1; i < noAreaTypes_; i++)
     {
       temp1 = temp + boost::to_string(i) + "_COST";
       nodeHandle_.param(temp1, areaCostList_[i], 1.0f);
@@ -256,8 +256,8 @@ struct RecastNode
     agentMaxClimb_ = config.agent_max_climb;
     agentMaxSlope_ = config.agent_max_slope;
 
-    if (areaCostList_.size() > 0)
-      areaCostList_[0] = config.TERRAIN_TYPE0_COST;
+/*    if (areaCostList_.size() > 0)
+      areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
     if (areaCostList_.size() > 1)
       areaCostList_[1] = config.TERRAIN_TYPE1_COST;
     if (areaCostList_.size() > 2)
