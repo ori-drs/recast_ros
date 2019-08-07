@@ -1,5 +1,6 @@
 #include "recast_ros/RecastPlanner.h"
 #include "recast_ros/recast_nodeConfig.h"
+#include "recast_ros/RecastProjectSrv.h"
 #include "recast_ros/RecastPathSrv.h"
 #include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
@@ -71,7 +72,8 @@ struct RecastNode
     //ROS_INFO("%f %f %f", colourList_[1].r, colourList_[1].g, colourList_[1].b);
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
+    servicePlan_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
+    serviceProject_ = nodeHandle_.advertiseService("project_point", &RecastNode::projectPointService, this);
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
@@ -323,6 +325,7 @@ struct RecastNode
     goal.y = goalY_;
     goal.z = goalZ_;
 
+    // query recast/detour for the path
     // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
     bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_);
 
@@ -333,12 +336,20 @@ struct RecastNode
     }
     ROS_INFO("Success: path has size %d", (int)path.size());
 
+    // avoid issues with single-point paths (=goal)
     if (path.size() == 1)
       path.push_back(path[0]);
 
+    // get path
     res.path.resize(path.size());
     for (unsigned int i = 0; i < path.size(); i++)
     {
+      // project to navmesh
+      unsigned char areaType;
+      pcl::PointXYZ pt;
+      recast_.getProjection(path[i], pt, areaType);
+      path[i] = pt;
+      // pass it on to result
       ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
       res.path[i].x = path[i].x;
       res.path[i].y = path[i].y;
@@ -364,7 +375,7 @@ struct RecastNode
     //Add Start Point
     p.x = path[0].x;
     p.y = path[0].y;
-    p.z = path[0].z;
+    p.z = path[0].z + agentHeight_;
 
     pathList_.scale.x = 0.1;
     pathList_.points[0] = p;
@@ -380,7 +391,7 @@ struct RecastNode
     {
       p.x = path[i].x;
       p.y = path[i].y;
-      p.z = path[i].z;
+      p.z = path[i].z + agentHeight_;
 
       pathList_.points[j] = p;
       pathList_.points[j + 1] = p;
@@ -389,7 +400,7 @@ struct RecastNode
     //Add End Point
     p.x = path[path.size() - 1].x;
     p.y = path[path.size() - 1].y;
-    p.z = path[path.size() - 1].z;
+    p.z = path[path.size() - 1].z + agentHeight_;
     pathList_.points[pathList_.points.size() - 1] = p;
     c.a = 0.6;
     c.r = 1.0;
@@ -402,6 +413,28 @@ struct RecastNode
     RecastPathPub_.publish(agentPos_);
 
     return checkStatus;
+  }
+
+  bool projectPointService(recast_ros::RecastProjectSrv::Request &req, recast_ros::RecastProjectSrv::Response &res)
+  {
+    pcl::PointXYZ point;
+    point.x = req.point.x;
+    point.y = req.point.y;
+    point.z = req.point.z;
+
+    pcl::PointXYZ proj;
+    unsigned char areaType;
+    if (!recast_.getProjection(point, proj, areaType))
+    {
+      ROS_ERROR("Could not project point");
+      return false;
+    }
+
+    res.projected_point.x = proj.x;
+    res.projected_point.y = proj.y;
+    res.projected_point.z = proj.z;
+    res.area_type.data = (char)areaType;
+    return true;
   }
 
   void run()
@@ -514,7 +547,8 @@ struct RecastNode
   ros::Publisher OriginalMeshPub_;
   ros::Publisher RecastPathPub_;
   ros::Rate loopRate_;
-  ros::ServiceServer service_;
+  ros::ServiceServer servicePlan_;
+  ros::ServiceServer serviceProject_;
   std::string path_;
   std::string pathAreas_;
   recast_ros::RecastPlanner recast_;

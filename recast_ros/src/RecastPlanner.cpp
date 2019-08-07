@@ -146,6 +146,63 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   return foundFullPath;
 }
 
+bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char& areaType)
+{
+  if (!sample)
+    return false;
+  dtNavMesh *navmesh = sample->getNavMesh();
+  dtNavMeshQuery *navquery = sample->getNavMeshQuery();
+  if (!navmesh || !navquery)
+    return false;
+
+  const float polyPickExt[3] = {2, 4, 2};
+  dtQueryFilter filter;
+  filter.setIncludeFlags(0x3);
+  filter.setExcludeFlags(0x0);
+
+  // Convert
+  float spos[3];
+  float nspos[3];
+  if (needToRotateMesh)
+  {
+    spos[0] = point.x;
+    spos[1] = point.z;
+    spos[2] = -point.y;
+  }
+  else
+  {
+    spos[0] = point.x;
+    spos[1] = point.y;
+    spos[2] = point.z;
+  }
+
+  // Find polygon
+  dtPolyRef ref;
+  navquery->findNearestPoly(spos, polyPickExt, &filter, &ref, nspos);
+  if (!ref)
+    return false;
+
+  // Get projected point
+  if (needToRotateMesh)
+  {
+    proj.x = nspos[0];  // in Recast x points front
+    proj.y = -nspos[2]; // in Recast z points right
+    proj.z = nspos[1];  // in Recast y points up
+  }
+  else
+  {
+    proj.x = nspos[0];
+    proj.y = nspos[1];
+    proj.z = nspos[2];
+  }
+
+  // Get area type
+  if (navmesh->getPolyArea(ref, &areaType) != DT_SUCCESS)
+    return false;
+
+  return true;
+}
+
 bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList) const
 {
   if (!sample)

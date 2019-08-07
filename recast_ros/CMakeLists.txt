@@ -92,6 +92,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
  add_service_files(
    FILES
    RecastPathSrv.srv
+   RecastProjectSrv.srv
  )
 
 ## Generate actions in the 'action' folder

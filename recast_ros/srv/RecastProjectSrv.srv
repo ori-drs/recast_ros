@@ -1,0 +1,4 @@
+geometry_msgs/Point point
+---
+geometry_msgs/Point projected_point
+std_msgs/Char area_type
