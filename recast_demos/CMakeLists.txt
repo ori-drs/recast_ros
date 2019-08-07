@@ -16,25 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 #list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Recast Library
-#set(RECAST_DIR "src/recast/recastnavigation")
-#set(RECAST_INCLUDE_DIRS
-#  ${RECAST_DIR}/DebugUtils/Include
-#  ${RECAST_DIR}/Detour/Include
-#  ${RECAST_DIR}/DetourTileCache/Include
-#  ${RECAST_DIR}/Recast/Include
-#  src/recast
-#)
-#include_directories(${RECAST_INCLUDE_DIRS})
-#file(GLOB RecastSources
-#  ${RECAST_DIR}/DebugUtils/Source/*.cpp
-#  ${RECAST_DIR}/Detour/Source/*.cpp
-#  ${RECAST_DIR}/DetourTileCache/Source/*.cpp
-#  ${RECAST_DIR}/Recast/Source/*.cpp
-#  ${RECASTDEMO_DIR}/Source/*.cpp
-#  src/recast/recastapp/*.cpp
-#)
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html

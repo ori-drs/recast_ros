@@ -141,7 +141,7 @@ struct RecastNode
     v.lifetime = ros::Duration();
   }
 
-  bool updateNavMesh(recastapp::RecastPlanner &recast_, const pcl::PolygonMesh &pclMesh, const std::vector<char> &trilabels) // Update NavMesh settings from dynamic rqt_reconfiguration
+  bool updateNavMesh(recast_ros::RecastPlanner &recast_, const pcl::PolygonMesh &pclMesh, const std::vector<char> &trilabels) // Update NavMesh settings from dynamic rqt_reconfiguration
   {
     nodeHandle_.setParam("cell_size", cellSize_);
     nodeHandle_.setParam("cell_height", cellHeight_);
@@ -406,13 +406,26 @@ struct RecastNode
 
   void run()
   {
-    // load
+    // load mesh
     pcl::PolygonMesh pclMesh;
+    bool loaded_mesh = pcl::io::loadPolygonFileOBJ(path_, pclMesh);
+    if (loaded_mesh) {
+      ROS_INFO("loaded OBJ file (%d polygons)", (int)pclMesh.polygons.size());
+    } else {
+      ROS_ERROR("could not load OBJ file");
+      return;
+    }
+
+    // load triangle labels (a.k.a. area types)
     std::vector<char> trilabels;
-    pcl::io::loadPolygonFileOBJ(path_, pclMesh);
-    ROS_INFO("loaded OBJ file");
-    loadAreas(pathAreas_, trilabels);
-    ROS_INFO("loaded AREAS file");
+    bool loaded_areas = recast_ros::loadAreas(pathAreas_, trilabels);
+    if (loaded_areas) {
+      ROS_INFO("loaded AREAS file (%d polygons)", (int)trilabels.size());
+    } else {
+      ROS_WARN("could not load AREAS file... will assume all polygons are of area type 1");
+      int n_tris = pclMesh.polygons.size();
+      trilabels = std::vector<char>(n_tris, (char)1);
+    }
 
     // build NavMesh
     if (!recast_.build(pclMesh, trilabels))
@@ -504,7 +517,7 @@ struct RecastNode
   ros::ServiceServer service_;
   std::string path_;
   std::string pathAreas_;
-  recastapp::RecastPlanner recast_;
+  recast_ros::RecastPlanner recast_;
   //Visualization settings
   visualization_msgs::Marker triList_;
   visualization_msgs::Marker lineMarkerList_;

@@ -455,11 +455,12 @@ bool MySample::handleBuild(const std::vector<char> & areaTypes)
 	memset(m_triareas, 0, ntris*sizeof(unsigned char));
 	rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
 
-	for(int i = 0; i < ntris; i++)		//Pass Area Types to Triangles
-	{
-		m_triareas[i] = areaTypes.at(i);
+	if (areaTypes.size() == ntris) {
+		for(int i = 0; i < ntris; i++)		//Pass Area Types to Triangles
+		{
+			m_triareas[i] = (unsigned char)areaTypes.at(i);
+		}
 	}
-
 
 
 	if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))

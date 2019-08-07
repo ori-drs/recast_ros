@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <pcl/io/vtk_lib_io.h>
 
-using namespace recastapp;
+using namespace recast_ros;
 
 RecastPlanner::RecastPlanner() : needToRotateMesh(true)
 {
@@ -40,15 +40,6 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   sample->handleSettings();
   sample->handleBuild(areaTypes);
   //TODO: retrun false if fail
-  return true;
-}
-bool loadAreas(const std::string &path, std::vector<char> &labels)
-{
-  // load file with per-triangle area types
-  std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);
-  std::istreambuf_iterator<char> eos;
-  std::istreambuf_iterator<char> iter(INFILE);
-  std::copy(iter, eos, std::back_inserter(labels));
   return true;
 }
 
@@ -270,3 +261,14 @@ void RecastPlanner::setDtAreaCost(const int &index, const int &cost)
   std::cout << "1\n";
   return;
 }*/
+
+bool recast_ros::loadAreas(const std::string &path, std::vector<char> &labels)
+{
+  // load file with per-triangle area types
+  std::ifstream INFILE(path, std::ios::in | std::ifstream::binary);
+  std::istreambuf_iterator<char> eos;
+  std::istreambuf_iterator<char> iter(INFILE);
+  std::copy(iter, eos, std::back_inserter(labels));
+  return labels.size() > 0;
+}
+

@@ -6,7 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <string>
 
-namespace recastapp
+namespace recast_ros
 {
 
 class RecastPlanner
@@ -30,5 +30,7 @@ private:
   boost::shared_ptr<InputGeom> geom;
   bool needToRotateMesh;
 };
-} // namespace recastapp
+
 bool loadAreas(const std::string &path, std::vector<char> &labels);
+
+} // namespace recast_ros
