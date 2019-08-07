@@ -331,7 +331,10 @@ struct RecastNode
       ROS_ERROR("Could not obtain shortest path");
       return checkStatus;
     }
-    ROS_INFO("success");
+    ROS_INFO("Success: path has size %d", (int)path.size());
+
+    if (path.size() == 1)
+      path.push_back(path[0]);
 
     res.path.resize(path.size());
     for (unsigned int i = 0; i < path.size(); i++)

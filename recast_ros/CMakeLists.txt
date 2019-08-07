@@ -178,7 +178,9 @@ add_executable(test_planning_service src/nodes/test_planning_service.cpp)
 target_link_libraries(test_planning_service ${catkin_LIBRARIES})
 add_dependencies(test_planning_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-
+add_executable(test_planning_service_interactive src/nodes/test_planning_service_interactive.cpp)
+target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})
+add_dependencies(test_planning_service_interactive ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 

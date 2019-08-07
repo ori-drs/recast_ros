@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="recast_ros" type="test_planning_service_interactive" name="test_planning_service_interactive" output="screen" respawn="true">
+    <param name="target_topic" value="/move_base_simple/goal" />
+    <param name="loop_rate" value="30.0" />
+  </node>
+
+</launch>
