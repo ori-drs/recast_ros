@@ -8,6 +8,16 @@ cd recast_ros/src
 git clone https://github.com/recastnavigation/recastnavigation.git
 ```
 
+### Testing path planning service:
+
+First run the demo to get the FSC mesh (see recast_demos section below).
+Then:
+
+```
+roslaunch ....
+rosrun .... [start x] [start y] [start z] [] [] []
+```
+
 ## recast_demos
 
 - Download https://drive.google.com/open?id=1i2Hkel-Nji3Zl0EdBjMIGzrxW9aALfRy

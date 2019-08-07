@@ -73,7 +73,6 @@ enum TerrainTypes
 	TERRAIN_TYPE17,
 	TERRAIN_TYPE18,
 	TERRAIN_TYPE19,
-	TERRAIN_TYPE20
 	// ... can have # Terrain Types up to RC_WALKABLE_AREAS (see Recast.h) # Terrain Types <= RC_WALKABLE_AREAS
 };
 

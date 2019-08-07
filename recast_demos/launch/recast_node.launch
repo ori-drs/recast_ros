@@ -42,7 +42,6 @@
     <param name="TERRAIN_TYPE17_COST" value="1.0f" />
     <param name="TERRAIN_TYPE18_COST" value="1.0f" />
     <param name="TERRAIN_TYPE19_COST" value="1.0f" />
-    <param name="TERRAIN_TYPE20_COST" value="1.0f" />
   </node>
 
 </launch>
