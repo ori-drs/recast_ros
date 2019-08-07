@@ -71,7 +71,7 @@ struct RecastNode
     //ROS_INFO("%f %f %f", colourList_[1].r, colourList_[1].g, colourList_[1].b);
 
     // create service (server & client)
-    service_ = nodeHandle_.advertiseService("path_plan", &RecastNode::findPathService, this);
+    service_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
