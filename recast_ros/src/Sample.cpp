@@ -240,16 +240,16 @@ bool Sample::handleBuild(const std::vector<char> & areaTypes)
 	return true;
 }
 
-/*
+
 void Sample::handleUpdate(const float dt)
 {
-	if (m_tool)
+/*	if (m_tool)
 		m_tool->handleUpdate(dt);
-	updateToolStates(dt);
+	updateToolStates(dt);*/
 }
 
 
-void Sample::updateToolStates(const float dt)
+/* void Sample::updateToolStates(const float dt)
 {
 	for (int i = 0; i < MAX_TOOLS; i++)
 	{
@@ -292,5 +292,5 @@ void Sample::renderOverlayToolStates(double* proj, double* model, int* view)
 		if (m_toolStates[i])
 			m_toolStates[i]->handleRenderOverlay(proj, model, view);
 	}
-}
-*/
+} */
+

@@ -23,7 +23,7 @@
 #include "SampleInterfaces.h"
 #include <vector>
 
-/*
+
 /// Tool types.
 enum SampleToolType
 {
@@ -38,10 +38,10 @@ enum SampleToolType
 	TOOL_CROWD,
 	MAX_TOOLS
 };
-*/
+
 /// These are just sample areas to use consistent values across the samples.
 /// The use should specify these base on his needs.
-/*enum SamplePolyAreas  // Recast Sample Terrain Types
+enum SamplePolyAreas  // Recast Sample Terrain Types
 {
 	SAMPLE_POLYAREA_GROUND,
 	SAMPLE_POLYAREA_WATER,
@@ -49,7 +49,7 @@ enum SampleToolType
 	SAMPLE_POLYAREA_DOOR,
 	SAMPLE_POLYAREA_GRASS,
 	SAMPLE_POLYAREA_JUMP,
-};*/
+};
 
 enum TerrainTypes
 {
@@ -168,7 +168,7 @@ public:
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom *geom);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
-	//virtual void handleUpdate(const float dt);
+	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);
 
 	virtual class InputGeom *getInputGeom() { return m_geom; }

@@ -258,7 +258,7 @@ struct RecastNode
     agentMaxClimb_ = config.agent_max_climb;
     agentMaxSlope_ = config.agent_max_slope;
 
-/*    if (areaCostList_.size() > 0)
+    /*    if (areaCostList_.size() > 0)
       areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
     if (areaCostList_.size() > 1)
       areaCostList_[1] = config.TERRAIN_TYPE1_COST;
@@ -442,9 +442,12 @@ struct RecastNode
     // load mesh
     pcl::PolygonMesh pclMesh;
     bool loaded_mesh = pcl::io::loadPolygonFileOBJ(path_, pclMesh);
-    if (loaded_mesh) {
+    if (loaded_mesh)
+    {
       ROS_INFO("loaded OBJ file (%d polygons)", (int)pclMesh.polygons.size());
-    } else {
+    }
+    else
+    {
       ROS_ERROR("could not load OBJ file");
       return;
     }
@@ -452,9 +455,12 @@ struct RecastNode
     // load triangle labels (a.k.a. area types)
     std::vector<char> trilabels;
     bool loaded_areas = recast_ros::loadAreas(pathAreas_, trilabels);
-    if (loaded_areas) {
+    if (loaded_areas)
+    {
       ROS_INFO("loaded AREAS file (%d polygons)", (int)trilabels.size());
-    } else {
+    }
+    else
+    {
       ROS_WARN("could not load AREAS file... will assume all polygons are of area type 1");
       int n_tris = pclMesh.polygons.size();
       trilabels = std::vector<char>(n_tris, (char)1);
@@ -471,7 +477,7 @@ struct RecastNode
     pcl::PolygonMesh::Ptr pclMeshPtr;
     std::vector<unsigned char> areaList;
     if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
-      ROS_INFO("FAILED");
+      ROS_INFO("Could not retrieve NavMesh");
 
     // Dynamic Reconfiguration start
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
@@ -493,7 +499,8 @@ struct RecastNode
     buildOriginalMeshVisualization(orgTriList_, triVerts);
 
     // infinite loop
-    std::vector<int> listCount = {0, 0, 0}; // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
+    // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
+    std::vector<int> listCount = {0, 0, 0};
     while (ros::ok())
     {
       // Publish lists
@@ -502,7 +509,7 @@ struct RecastNode
         ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
         ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
         NavMeshPub_.publish(lineMarkerList_);
-        NavMeshPub_.publish(triList_);
+        //NavMeshPub_.publish(triList_);
       }
 
       if (OriginalMeshPub_.getNumSubscribers() >= 1)

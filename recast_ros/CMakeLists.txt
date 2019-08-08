@@ -47,6 +47,7 @@ file(GLOB RecastSources
   ${RECAST_DIR}/Detour/Source/*.cpp
   ${RECAST_DIR}/DetourTileCache/Source/*.cpp
   ${RECAST_DIR}/Recast/Source/*.cpp
+  ${RECAST_DIR}/Recast/Source/*.c
   ${RECASTDEMO_DIR}/Source/*.cpp
   src/*.cpp
 )
