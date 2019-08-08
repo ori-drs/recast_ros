@@ -41,8 +41,8 @@ protected:
 	int m_cacheRawSize;
 	int m_cacheLayerCount;
 	unsigned int m_cacheBuildMemUsage;
-/*	
-	enum DrawMode
+	
+/* 	enum DrawMode
 	{
 		DRAWMODE_NAVMESH,
 		DRAWMODE_NAVMESH_TRANS,
@@ -53,9 +53,9 @@ protected:
 		DRAWMODE_MESH,
 		DRAWMODE_CACHE_BOUNDS,
 		MAX_DRAWMODE
-	}; */
+	};
 	
-//	DrawMode m_drawMode;
+	DrawMode m_drawMode; */
 	
 	int m_maxTiles;
 	int m_maxPolysPerTile;
@@ -66,10 +66,10 @@ public:
 	virtual ~MySample();
 	
 	virtual void handleSettings();
-	//virtual void handleTools();
-	//virtual void handleDebugMode();
-	//virtual void handleRender();
-	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
+	virtual void handleTools();
+	virtual void handleDebugMode();
+	virtual void handleRender();
+	virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom* geom, const std::vector<char> &areaTypes);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	virtual void handleUpdate(const float dt);
@@ -79,7 +79,7 @@ public:
 	void renderCachedTile(const int tx, const int ty, const int type);
 	void renderCachedTileOverlay(const int tx, const int ty, double* proj, double* model, int* view);
 
-	void addTempObstacle(const float* pos);
+	void addTempObstacle(const float *pos, const float &radi, const float &height);
 	void removeTempObstacle(const float* sp, const float* sq);
 	void clearAllTempObstacles();
 
@@ -91,7 +91,7 @@ private:
 	MySample(const MySample&);
 	MySample& operator=(const MySample&);
 
-	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles);
+	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles,const std::vector<char> &areaTypes);
 };
 
 

@@ -24,7 +24,7 @@
 #include <vector>
 
 
-/// Tool types.
+/* /// Tool types.
 enum SampleToolType
 {
 	TOOL_NONE = 0,
@@ -37,11 +37,11 @@ enum SampleToolType
 	TOOL_CONVEX_VOLUME,
 	TOOL_CROWD,
 	MAX_TOOLS
-};
+}; */
 
 /// These are just sample areas to use consistent values across the samples.
 /// The use should specify these base on his needs.
-enum SamplePolyAreas  // Recast Sample Terrain Types
+/* enum SamplePolyAreas  // Recast Sample Terrain Types
 {
 	SAMPLE_POLYAREA_GROUND,
 	SAMPLE_POLYAREA_WATER,
@@ -49,7 +49,7 @@ enum SamplePolyAreas  // Recast Sample Terrain Types
 	SAMPLE_POLYAREA_DOOR,
 	SAMPLE_POLYAREA_GRASS,
 	SAMPLE_POLYAREA_JUMP,
-};
+}; */
 
 enum TerrainTypes
 {
@@ -85,7 +85,7 @@ enum SamplePolyFlags
 	SAMPLE_POLYFLAGS_DISABLED = 0x10, // Disabled polygon
 	SAMPLE_POLYFLAGS_ALL = 0xffff	 // All abilities.
 };
-
+ 
 enum SamplePartitionType
 {
 	SAMPLE_PARTITION_WATERSHED,
@@ -166,7 +166,7 @@ public:
 	//virtual void handleStep();
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom *geom);
+	virtual void handleMeshChanged(class InputGeom *geom, const std::vector<char> &areaTypes);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);

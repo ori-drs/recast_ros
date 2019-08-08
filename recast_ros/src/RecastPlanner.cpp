@@ -36,10 +36,11 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   geom->setBuildSettings(stg);
   sample = boost::shared_ptr<Sample>(new MySample());
   sample->setContext(&ctx);
-  sample->handleMeshChanged(geom.get());
+  sample->handleMeshChanged(geom.get(), areaTypes);
   sample->handleSettings();
   sample->handleBuild(areaTypes);
   //TODO: retrun false if fail
+
   return true;
 }
 
@@ -143,6 +144,11 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
     }
   }
   return foundFullPath;
+}
+//Assume cylindrical obstacle
+void RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
+{
+  //sample->addTempObstacle(pos, radi, height);
 }
 
 bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType)
@@ -284,8 +290,6 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
     pclmesh->polygons[i].vertices[0] = i * 3 + 0;
     pclmesh->polygons[i].vertices[1] = i * 3 + 1;
     pclmesh->polygons[i].vertices[2] = i * 3 + 2;
-
-    std::cout << polyVerts.at(i).x << "\t" << polyVerts.at(i).y << polyVerts.at(i).z << std::endl;
   }
 
   // line list

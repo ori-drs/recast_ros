@@ -509,7 +509,7 @@ struct RecastNode
         ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
         ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
         NavMeshPub_.publish(lineMarkerList_);
-        //NavMeshPub_.publish(triList_);
+        NavMeshPub_.publish(triList_);
       }
 
       if (OriginalMeshPub_.getNumSubscribers() >= 1)

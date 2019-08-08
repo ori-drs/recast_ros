@@ -102,7 +102,7 @@ void Sample::handleRender()
 //{
 //}
 
-void Sample::handleMeshChanged(InputGeom* geom)
+void Sample::handleMeshChanged(InputGeom* geom, const std::vector<char> &areaTypes)
 {
 	m_geom = geom;
 
