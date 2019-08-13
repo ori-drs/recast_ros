@@ -70,7 +70,7 @@ public:
 	virtual void handleDebugMode();
 	virtual void handleRender();
 	virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom* geom, const std::vector<char> &areaTypes);
+	virtual void handleMeshChanged(class InputGeom* geom);//, const std::vector<char> &areaTypes);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	virtual void handleUpdate(const float dt);
 
@@ -79,7 +79,7 @@ public:
 	void renderCachedTile(const int tx, const int ty, const int type);
 	void renderCachedTileOverlay(const int tx, const int ty, double* proj, double* model, int* view);
 
-	void addTempObstacle(const float *pos, const float &radi, const float &height);
+	dtStatus addTempObstacle(const float *pos, const float &radi, const float &height);
 	void removeTempObstacle(const float* sp, const float* sq);
 	void clearAllTempObstacles();
 
@@ -91,7 +91,7 @@ private:
 	MySample(const MySample&);
 	MySample& operator=(const MySample&);
 
-	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles,const std::vector<char> &areaTypes);
+	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles);//,const std::vector<char> &areaTypes);
 };
 
 

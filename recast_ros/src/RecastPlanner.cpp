@@ -24,7 +24,7 @@ RecastPlanner::RecastPlanner() : needToRotateMesh(true)
   stg.vertsPerPoly = 6.0f;
   stg.detailSampleDist = 6.0f;
   stg.detailSampleMaxError = 1.0f;
-  stg.partitionType = SAMPLE_PARTITION_WATERSHED;
+  stg.partitionType = SAMPLE_PARTITION_MONOTONE;
 }
 
 bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes)
@@ -36,7 +36,7 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   geom->setBuildSettings(stg);
   sample = boost::shared_ptr<Sample>(new MySample());
   sample->setContext(&ctx);
-  sample->handleMeshChanged(geom.get(), areaTypes);
+  sample->handleMeshChanged(geom.get()); //, areaTypes);
   sample->handleSettings();
   sample->handleBuild(areaTypes);
   //TODO: retrun false if fail
@@ -146,9 +146,25 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   return foundFullPath;
 }
 //Assume cylindrical obstacle
-void RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
+bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
 {
-  //sample->addTempObstacle(pos, radi, height);
+  float x[3] = {pos[0], pos[2], -pos[1]};
+
+  dtStatus res = sample->addTempObstacle(pos, radi, height);
+  //update();
+
+  if (res == DT_SUCCESS)
+    return true;
+  else
+    return false;
+}
+
+void RecastPlanner::update()
+{
+  // Update sample simulation.
+  printf("Recast Update\n");
+
+  sample->handleUpdate(0.01);
 }
 
 bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType)
@@ -274,15 +290,9 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
   int ntri = pclcloud->points.size() / 3;
   pclmesh->polygons.resize(ntri);
 
-  pcl::PointCloud<pcl::PointXYZ> polyVerts;
+  //pcl::PointCloud<pcl::PointXYZ> polyVerts;
 
-  pcl::fromPCLPointCloud2(pclmesh->cloud, polyVerts);
-
-  if (ntri < 1)
-  {
-    std::cout << "we have nothing";
-    return false;
-  }
+  // pcl::fromPCLPointCloud2(pclmesh->cloud, polyVerts);
 
   for (int i = 0; i < ntri; i++)
   {

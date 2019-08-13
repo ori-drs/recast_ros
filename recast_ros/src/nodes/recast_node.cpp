@@ -18,7 +18,7 @@
 
 struct RecastNode
 {
-  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(100.0)
+  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(10.0)
   {
     // ros params
     std::string base = ros::package::getPath("recast_demos");
@@ -154,7 +154,7 @@ struct RecastNode
 
     std::string temp = "TERRAIN_TYPE", temp1 = "";
 
-    for (size_t i = 0; i < noAreaTypes_; i++)
+    for (size_t i = 1; i < noAreaTypes_; i++)
     {
       temp1 = temp + boost::to_string(i) + "_COST";
       nodeHandle_.setParam(temp1, areaCostList_[i]);
@@ -472,6 +472,7 @@ struct RecastNode
       ROS_ERROR("Could not build NavMesh");
       return;
     }
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr temp;
     std::vector<Eigen::Vector3d> lineList;
     pcl::PolygonMesh::Ptr pclMeshPtr;
@@ -490,6 +491,7 @@ struct RecastNode
     setVisualParameters(triList_, visualization_msgs::Marker::TRIANGLE_LIST, "Nav Mesh Triangles", 2);
     setVisualParameters(orgTriList_, visualization_msgs::Marker::TRIANGLE_LIST, "Original Mesh Triangles", 3);
     setVisualParameters(lineMarkerList_, visualization_msgs::Marker::LINE_LIST, "Nav Mesh Lines", 4);
+
     pcl::PointCloud<pcl::PointXYZ> polyVerts, triVerts;
 
     pcl::fromPCLPointCloud2(pclMesh.cloud, triVerts);
@@ -501,24 +503,19 @@ struct RecastNode
     // infinite loop
     // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
     std::vector<int> listCount = {0, 0, 0};
+
+    float pos[3] = {30, -9, -1.16};
+    float pos1[3] = {30, -9, -1.16};
+    float pos2[3] = {30, -9, -1.16};
+    float pos3[3] = {30, -9, -1.16};
+    float pos4[3] = {30, -73, -1.16};
+    float pos5[3] = {30, -73, -1.16};
+    float pos6[3] = {30, -32, -1.16};
+
+    bool doOnce = true;
+
     while (ros::ok())
     {
-      // Publish lists
-      if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
-      {
-        ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
-        ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
-        NavMeshPub_.publish(lineMarkerList_);
-        NavMeshPub_.publish(triList_);
-      }
-
-      if (OriginalMeshPub_.getNumSubscribers() >= 1)
-      {
-        ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]);
-        OriginalMeshPub_.publish(orgTriList_);
-        listCount[1]++;
-      }
-
       if (updateMeshCheck_)
       {
         // Clear previous Rviz Markers
@@ -531,9 +528,11 @@ struct RecastNode
         polyVerts.clear();
         areaList.clear();
         lineList.clear();
+
         // Update Navigation mesh based on new config
         if (!updateNavMesh(recast_, pclMesh, trilabels))
           ROS_INFO("Map update failed");
+
         // Get new navigation mesh
         if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
           ROS_INFO("FAILED");
@@ -542,6 +541,59 @@ struct RecastNode
         // Create Rviz Markers based on new navigation mesh
         buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
         updateMeshCheck_ = false; // clear update requirement flag
+        doOnce = true;
+      }
+
+      if (doOnce)
+      {
+        // Add temp obstacle
+        if (recast_.addRecastObstacle(pos, 100.0f, 100.0f))
+        {
+          if (recast_.addRecastObstacle(pos1, 100.0f, 100.0f))
+            if (recast_.addRecastObstacle(pos2, 100.0f, 100.0f))
+              if (recast_.addRecastObstacle(pos3, 100.0f, 100.0f))
+                if (recast_.addRecastObstacle(pos4, 100.0f, 100.0f))
+                  if (recast_.addRecastObstacle(pos5, 100.0f, 100.0f))
+                    if (recast_.addRecastObstacle(pos6, 100.0f, 100.0f))
+                      ROS_INFO("Obstacle is added");
+          recast_.update();
+
+          doOnce = false; // clear update requirement flag
+        }
+
+        // Clear previous Rviz Markers
+        triList_.points.clear();
+        triList_.colors.clear();
+
+        lineMarkerList_.points.clear();
+        lineMarkerList_.colors.clear();
+
+        polyVerts.clear();
+        areaList.clear();
+        lineList.clear();
+
+        // Get new navigation mesh
+        if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
+          ROS_INFO("FAILED");
+
+        pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
+        // Create Rviz Markers based on new navigation mesh
+        buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
+      }
+
+      // Publish lists
+      if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+      {
+        ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
+        ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
+        NavMeshPub_.publish(lineMarkerList_);
+        NavMeshPub_.publish(triList_);
+      }
+
+      if (OriginalMeshPub_.getNumSubscribers() >= 1)
+      {
+        ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]++);
+        OriginalMeshPub_.publish(orgTriList_);
       }
       ros::spinOnce(); // check changes in ros network
       loopRate_.sleep();

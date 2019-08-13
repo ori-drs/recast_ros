@@ -181,18 +181,18 @@ struct LinearAllocator : public dtTileCacheAlloc
 struct MeshProcess : public dtTileCacheMeshProcess
 {
 	InputGeom *m_geom;
-	std::vector<char> areaTypes;
+	//	std::vector<char> areaTypes;
 
-	inline MeshProcess() : m_geom(0), areaTypes(1, 0)
+	inline MeshProcess() : m_geom(0) //, areaTypes(1, 0)
 	{
 	}
 
-	inline void init(InputGeom *geom, const std::vector<char> &areaList)
+	inline void init(InputGeom *geom) //, const std::vector<char> &areaList)
 	{
 		m_geom = geom;
-		areaTypes.resize(areaList.size());
+		/* 		areaTypes.resize(areaList.size());
 		for (size_t i = 0; i < areaList.size(); i++)
-			areaTypes[i] = areaList[i];
+			areaTypes[i] = areaList[i]; */
 	}
 
 	virtual void process(struct dtNavMeshCreateParams *params,
@@ -265,7 +265,7 @@ int MySample::rasterizeTileLayers(
 	const int tx, const int ty,
 	const rcConfig &cfg,
 	TileCacheData *tiles,
-	const int maxTiles, const std::vector<char> &areaTypes)
+	const int maxTiles) //, const std::vector<char> &areaTypes)
 {
 	if (!m_geom || !m_geom->getMesh() || !m_geom->getChunkyMesh())
 	{
@@ -338,24 +338,18 @@ int MySample::rasterizeTileLayers(
 		const rcChunkyTriMeshNode &node = chunkyMesh->nodes[cid[i]];
 		const int *tris = &chunkyMesh->tris[node.i * 3];
 		const int ntris = node.n;
-		j += ntris;
-		std::cout << ncid << "\t\t\t" << ntris << std::endl;
 		memset(rc.triareas, 0, ntris * sizeof(unsigned char));
 		rcMarkWalkableTriangles(m_ctx, tcfg.walkableSlopeAngle,
 								verts, nverts, tris, ntris, rc.triareas);
 
-			for (int k = 0; k < ntris; k++) //Pass Area Types to Triangles
-			{
-				rc.triareas[k] = (unsigned char)areaTypes.at(k);
-			}
-
+		for (int k = 0; k < ntris; k++) //Pass Area Types to Triangles
+		{
+			rc.triareas[k] = 1; // TODO: Area types will be used
+		}
 
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
 			return 0;
 	}
-	while(true)
-	std::cout << j << std::endl;
-
 
 	// Once all geometry is rasterized, we do initial pass of filtering to
 	// remove unwanted overhangs caused by the conservative rasterization
@@ -662,154 +656,154 @@ dtObstacleRef hitTestObstacle(const dtTileCache *tc, const float *sp, const floa
 	} 
 }*/
 
-class TempObstacleHilightTool // : public SampleTool
-{
-	MySample *m_sample;
-	float m_hitPos[3];
-	bool m_hitPosSet;
-	//	int m_drawType;
+// class TempObstacleHilightTool // : public SampleTool
+// {
+// 	MySample *m_sample;
+// 	float m_hitPos[3];
+// 	bool m_hitPosSet;
+// 	//	int m_drawType;
 
-public:
-	TempObstacleHilightTool() : m_sample(0),
-								m_hitPosSet(false)
-	//		m_drawType(DRAWDETAIL_AREAS)
-	{
-		m_hitPos[0] = m_hitPos[1] = m_hitPos[2] = 0;
-	}
+// public:
+// 	TempObstacleHilightTool() : m_sample(0),
+// 								m_hitPosSet(false)
+// 	//		m_drawType(DRAWDETAIL_AREAS)
+// 	{
+// 		m_hitPos[0] = m_hitPos[1] = m_hitPos[2] = 0;
+// 	}
 
-	virtual ~TempObstacleHilightTool()
-	{
-	}
+// 	virtual ~TempObstacleHilightTool()
+// 	{
+// 	}
 
-	virtual int type()
-	{ /*  return TOOL_TILE_HIGHLIGHT; */
-	}
+// 	virtual int type()
+// 	{ /*  return TOOL_TILE_HIGHLIGHT; */
+// 	}
 
-	virtual void init(Sample *sample)
-	{
-		m_sample = (MySample *)sample;
-	}
+// 	virtual void init(Sample *sample)
+// 	{
+// 		m_sample = (MySample *)sample;
+// 	}
 
-	virtual void reset() {}
+// 	virtual void reset() {}
 
-	virtual void handleMenu()
-	{
-		/* 		imguiLabel("Highlight Tile Cache");
-		imguiValue("Click LMB to highlight a tile.");
-		imguiSeparator();
-		if (imguiCheck("Draw Areas", m_drawType == DRAWDETAIL_AREAS))
-			m_drawType = DRAWDETAIL_AREAS;
-		if (imguiCheck("Draw Regions", m_drawType == DRAWDETAIL_REGIONS))
-			m_drawType = DRAWDETAIL_REGIONS;
-		if (imguiCheck("Draw Contours", m_drawType == DRAWDETAIL_CONTOURS))
-			m_drawType = DRAWDETAIL_CONTOURS;
-		if (imguiCheck("Draw Mesh", m_drawType == DRAWDETAIL_MESH))
-			m_drawType = DRAWDETAIL_MESH; */
-	}
+// 	virtual void handleMenu()
+// 	{
+// 		/* 		imguiLabel("Highlight Tile Cache");
+// 		imguiValue("Click LMB to highlight a tile.");
+// 		imguiSeparator();
+// 		if (imguiCheck("Draw Areas", m_drawType == DRAWDETAIL_AREAS))
+// 			m_drawType = DRAWDETAIL_AREAS;
+// 		if (imguiCheck("Draw Regions", m_drawType == DRAWDETAIL_REGIONS))
+// 			m_drawType = DRAWDETAIL_REGIONS;
+// 		if (imguiCheck("Draw Contours", m_drawType == DRAWDETAIL_CONTOURS))
+// 			m_drawType = DRAWDETAIL_CONTOURS;
+// 		if (imguiCheck("Draw Mesh", m_drawType == DRAWDETAIL_MESH))
+// 			m_drawType = DRAWDETAIL_MESH; */
+// 	}
 
-	virtual void handleClick(const float * /*s*/, const float *p, bool /*shift*/)
-	{
-		m_hitPosSet = true;
-		rcVcopy(m_hitPos, p);
-	}
+// 	virtual void handleClick(const float * /*s*/, const float *p, bool /*shift*/)
+// 	{
+// 		m_hitPosSet = true;
+// 		rcVcopy(m_hitPos, p);
+// 	}
 
-	virtual void handleToggle() {}
+// 	virtual void handleToggle() {}
 
-	virtual void handleStep() {}
+// 	virtual void handleStep() {}
 
-	virtual void handleUpdate(const float /*dt*/) {}
+// 	//virtual void handleUpdate(const float /*dt*/) {}
 
-	virtual void handleRender()
-	{
-		/* 		if (m_hitPosSet && m_sample)
-		{
-			const float s = m_sample->getAgentRadius();
-			glColor4ub(0,0,0,128);
-			glLineWidth(2.0f);
-			glBegin(GL_LINES);
-			glVertex3f(m_hitPos[0]-s,m_hitPos[1]+0.1f,m_hitPos[2]);
-			glVertex3f(m_hitPos[0]+s,m_hitPos[1]+0.1f,m_hitPos[2]);
-			glVertex3f(m_hitPos[0],m_hitPos[1]-s+0.1f,m_hitPos[2]);
-			glVertex3f(m_hitPos[0],m_hitPos[1]+s+0.1f,m_hitPos[2]);
-			glVertex3f(m_hitPos[0],m_hitPos[1]+0.1f,m_hitPos[2]-s);
-			glVertex3f(m_hitPos[0],m_hitPos[1]+0.1f,m_hitPos[2]+s);
-			glEnd();
-			glLineWidth(1.0f);
+// 	virtual void handleRender()
+// 	{
+// 		/* 		if (m_hitPosSet && m_sample)
+// 		{
+// 			const float s = m_sample->getAgentRadius();
+// 			glColor4ub(0,0,0,128);
+// 			glLineWidth(2.0f);
+// 			glBegin(GL_LINES);
+// 			glVertex3f(m_hitPos[0]-s,m_hitPos[1]+0.1f,m_hitPos[2]);
+// 			glVertex3f(m_hitPos[0]+s,m_hitPos[1]+0.1f,m_hitPos[2]);
+// 			glVertex3f(m_hitPos[0],m_hitPos[1]-s+0.1f,m_hitPos[2]);
+// 			glVertex3f(m_hitPos[0],m_hitPos[1]+s+0.1f,m_hitPos[2]);
+// 			glVertex3f(m_hitPos[0],m_hitPos[1]+0.1f,m_hitPos[2]-s);
+// 			glVertex3f(m_hitPos[0],m_hitPos[1]+0.1f,m_hitPos[2]+s);
+// 			glEnd();
+// 			glLineWidth(1.0f);
 
-			int tx=0, ty=0;
-			m_sample->getTilePos(m_hitPos, tx, ty);
-			m_sample->renderCachedTile(tx,ty,m_drawType);
-		} */
-	}
+// 			int tx=0, ty=0;
+// 			m_sample->getTilePos(m_hitPos, tx, ty);
+// 			m_sample->renderCachedTile(tx,ty,m_drawType);
+// 		} */
+// 	}
 
-	virtual void handleRenderOverlay(double *proj, double *model, int *view)
-	{
-		if (m_hitPosSet)
-		{
-			if (m_sample)
-			{
-				int tx = 0, ty = 0;
-				m_sample->getTilePos(m_hitPos, tx, ty);
-				m_sample->renderCachedTileOverlay(tx, ty, proj, model, view);
-			}
-		}
-	}
-};
+// 	virtual void handleRenderOverlay(double *proj, double *model, int *view)
+// 	{
+// 		if (m_hitPosSet)
+// 		{
+// 			if (m_sample)
+// 			{
+// 				int tx = 0, ty = 0;
+// 				m_sample->getTilePos(m_hitPos, tx, ty);
+// 				m_sample->renderCachedTileOverlay(tx, ty, proj, model, view);
+// 			}
+// 		}
+// 	}
+// };
 
-class TempObstacleCreateTool //: public SampleTool
-{
-	MySample *m_sample;
+// class TempObstacleCreateTool //: public SampleTool
+// {
+// 	MySample *m_sample;
 
-public:
-	TempObstacleCreateTool() : m_sample(0)
-	{
-	}
+// public:
+// 	TempObstacleCreateTool() : m_sample(0)
+// 	{
+// 	}
 
-	virtual ~TempObstacleCreateTool()
-	{
-	}
+// 	virtual ~TempObstacleCreateTool()
+// 	{
+// 	}
 
-	virtual int type()
-	{ /* return TOOL_TEMP_OBSTACLE;  */
-	}
+// 	virtual int type()
+// 	{  return 3;
+// 	}
 
-	virtual void init(Sample *sample)
-	{
-		m_sample = (MySample *)sample;
-	}
+// 	virtual void init(Sample *sample)
+// 	{
+// 		m_sample = (MySample *)sample;
+// 	}
 
-	virtual void reset() {}
+// 	virtual void reset() {}
 
-	virtual void handleMenu()
-	{
-		/* 		imguiLabel("Create Temp Obstacles");
-		
-		if (imguiButton("Remove All"))
-			m_sample->clearAllTempObstacles();
-		
-		imguiSeparator();
+// 	virtual void handleMenu()
+// 	{
+// 		/* 		imguiLabel("Create Temp Obstacles");
 
-		imguiValue("Click LMB to create an obstacle.");
-		imguiValue("Shift+LMB to remove an obstacle."); */
-	}
+// 		if (imguiButton("Remove All"))
+// 			m_sample->clearAllTempObstacles();
 
-	virtual void handleClick(const float *s, const float *p, bool shift)
-	{
-		/* 		if (m_sample)
-		{
-			if (shift)
-				m_sample->removeTempObstacle(s, p);
-			else
-				m_sample->addTempObstacle(p);
-		} */
-	}
+// 		imguiSeparator();
 
-	virtual void handleToggle() {}
-	virtual void handleStep() {}
-	virtual void handleUpdate(const float /*dt*/) {}
-	virtual void handleRender() {}
-	virtual void handleRenderOverlay(double * /*proj*/, double * /*model*/, int * /*view*/) {}
-};
+// 		imguiValue("Click LMB to create an obstacle.");
+// 		imguiValue("Shift+LMB to remove an obstacle."); */
+// 	}
+
+// 	virtual void handleClick(const float *s, const float *p, bool shift)
+// 	{
+// 		/* 		if (m_sample)
+// 		{
+// 			if (shift)
+// 				m_sample->removeTempObstacle(s, p);
+// 			else
+// 				m_sample->addTempObstacle(p);
+// 		} */
+// 	}
+
+// 	virtual void handleToggle() {}
+// 	virtual void handleStep() {}
+// 	virtual void handleUpdate(const float /*dt*/) {}
+// 	virtual void handleRender() {}
+// 	virtual void handleRenderOverlay(double * /*proj*/, double * /*model*/, int * /*view*/) {}
+// };
 
 MySample::MySample() : m_keepInterResults(false),
 					   m_tileCache(0),
@@ -1128,9 +1122,9 @@ void MySample::handleRenderOverlay(double *proj, double *model, int *view)
 	*/
 }
 
-void MySample::handleMeshChanged(class InputGeom *geom, const std::vector<char> &areaTypes)
+void MySample::handleMeshChanged(class InputGeom *geom) //, const std::vector<char> &areaTypes)
 {
-	Sample::handleMeshChanged(geom, areaTypes);
+	Sample::handleMeshChanged(geom); //, areaTypes);
 
 	dtFreeTileCache(m_tileCache);
 	m_tileCache = 0;
@@ -1142,20 +1136,25 @@ void MySample::handleMeshChanged(class InputGeom *geom, const std::vector<char> 
 	// {
 	// 	m_tool->reset();
 	// 	m_tool->init(this);
-	m_tmproc->init(m_geom, areaTypes);
+	//m_tmproc->init(m_geom);
 	// }
 	// resetToolStates();
 	// initToolStates(this);
 }
 
-void MySample::addTempObstacle(const float *pos, const float &radi, const float &height)
+dtStatus MySample::addTempObstacle(const float *pos, const float &radi, const float &height)
 {
 	if (!m_tileCache)
-		return;
+		return DT_FAILURE;
 	float p[3];
 	dtVcopy(p, pos);
 	p[1] -= 0.5f;
-	m_tileCache->addObstacle(p, radi, height, 0);
+	dtStatus res = m_tileCache->addObstacle(p, radi, height, 0);
+	//this->handleUpdate(0.01);
+	if (res == DT_SUCCESS)
+		std::cout << "\nObstacle created\n";
+
+	return res;
 }
 
 void MySample::removeTempObstacle(const float *sp, const float *sq)
@@ -1177,6 +1176,7 @@ void MySample::clearAllTempObstacles()
 			continue;
 		m_tileCache->removeObstacle(m_tileCache->getObstacleRef(ob));
 	}
+	printf("does this run2?\n");
 }
 
 bool MySample::handleBuild(const std::vector<char> &areaTypes)
@@ -1189,7 +1189,7 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 		return false;
 	}
 
-	m_tmproc->init(m_geom, areaTypes);
+	m_tmproc->init(m_geom);
 
 	// Init cache
 	const float *bmin = m_geom->getNavMeshBoundsMin();
@@ -1270,10 +1270,6 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 	params.maxTiles = m_maxTiles;
 	params.maxPolys = m_maxPolysPerTile;
 
-	float p[3] = {0, 14, 16};
-
-	//this->addTempObstacle(p);
-
 	status = m_navMesh->init(&params);
 	if (dtStatusFailed(status))
 	{
@@ -1302,8 +1298,7 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 		{
 			TileCacheData tiles[MAX_LAYERS];
 			memset(tiles, 0, sizeof(tiles));
-			int ntiles = rasterizeTileLayers(x, y, cfg, tiles, MAX_LAYERS, areaTypes);
-
+			int ntiles = rasterizeTileLayers(x, y, cfg, tiles, MAX_LAYERS);
 			for (int i = 0; i < ntiles; ++i)
 			{
 				TileCacheData *tile = &tiles[i];
@@ -1324,9 +1319,9 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 
 	// Build initial meshes
 	m_ctx->startTimer(RC_TIMER_TOTAL);
-	for (int y = 0; y < th; ++y)
+ 	for (int y = 0; y < th; ++y)
 		for (int x = 0; x < tw; ++x)
-			m_tileCache->buildNavMeshTilesAt(x, y, m_navMesh);
+			m_tileCache->buildNavMeshTilesAt(x, y, m_navMesh); 
 	m_ctx->stopTimer(RC_TIMER_TOTAL);
 
 	m_cacheBuildTimeMs = m_ctx->getAccumulatedTime(RC_TIMER_TOTAL) / 1000.0f;
@@ -1340,6 +1335,7 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 		if (tile->header)
 			navmeshMemUsage += tile->dataSize;
 	}
+
 	//	printf("navmeshMemUsage = %.1f kB", navmeshMemUsage/1024.0f);
 
 	/* 	if (m_tool)
@@ -1352,13 +1348,18 @@ bool MySample::handleBuild(const std::vector<char> &areaTypes)
 void MySample::handleUpdate(const float dt)
 {
 	Sample::handleUpdate(dt);
+	printf("MySample Update\n");
 
 	if (!m_navMesh)
 		return;
 	if (!m_tileCache)
 		return;
 
-	m_tileCache->update(dt, m_navMesh);
+	bool check[1];
+	dtStatus result = m_tileCache->update(dt, m_navMesh, check);
+
+	if(result == DT_SUCCESS)
+		printf("Update achieved");
 }
 
 void MySample::getTilePos(const float *pos, int &tx, int &ty)

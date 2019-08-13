@@ -21,6 +21,7 @@
 
 #include "Recast.h"
 #include "SampleInterfaces.h"
+#include "DetourStatus.h"
 #include <vector>
 
 
@@ -166,10 +167,11 @@ public:
 	//virtual void handleStep();
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom *geom, const std::vector<char> &areaTypes);
+	virtual void handleMeshChanged(class InputGeom *geom);//, const std::vector<char> &areaTypes);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);
+	virtual dtStatus addTempObstacle(const float *pos,const float &radi,const float &height) = 0;
 
 	virtual class InputGeom *getInputGeom() { return m_geom; }
 	virtual class dtNavMesh *getNavMesh() { return m_navMesh; }

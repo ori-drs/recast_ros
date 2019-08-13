@@ -38,6 +38,7 @@ set(RECAST_INCLUDE_DIRS
   ${RECAST_DIR}/DebugUtils/Include
   ${RECAST_DIR}/Detour/Include
   ${RECAST_DIR}/DetourTileCache/Include
+   ${RECAST_DIR}/DetourCrowd/Include
   ${RECAST_DIR}/Recast/Include
   include
 )
@@ -46,6 +47,7 @@ file(GLOB RecastSources
   ${RECAST_DIR}/DebugUtils/Source/*.cpp
   ${RECAST_DIR}/Detour/Source/*.cpp
   ${RECAST_DIR}/DetourTileCache/Source/*.cpp
+  ${RECAST_DIR}/DetourCrowd/Source/*.cpp
   ${RECAST_DIR}/Recast/Source/*.cpp
   ${RECAST_DIR}/Recast/Source/*.c
   ${RECASTDEMO_DIR}/Source/*.cpp
