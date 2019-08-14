@@ -1,5 +1,5 @@
 #include "recast_ros/RecastPlanner.h"
-#include "recast_ros/MySample.h"
+#include "recast_ros/MySampleObstacles.h"
 #include "Recast.h"
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
@@ -24,7 +24,7 @@ RecastPlanner::RecastPlanner() : needToRotateMesh(true)
   stg.vertsPerPoly = 6.0f;
   stg.detailSampleDist = 6.0f;
   stg.detailSampleMaxError = 1.0f;
-  stg.partitionType = SAMPLE_PARTITION_MONOTONE;
+  stg.partitionType = SAMPLE_PARTITION_WATERSHED;
 }
 
 bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes)
@@ -34,7 +34,7 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   if (!geom->load(&ctx, pclMesh, needToRotateMesh))
     return false;
   geom->setBuildSettings(stg);
-  sample = boost::shared_ptr<Sample>(new MySample());
+  sample = boost::shared_ptr<Sample>(new MySampleObstacles());
   sample->setContext(&ctx);
   sample->handleMeshChanged(geom.get()); //, areaTypes);
   sample->handleSettings();
@@ -150,7 +150,7 @@ bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const
 {
   float x[3] = {pos[0], pos[2], -pos[1]};
 
-  dtStatus res = sample->addTempObstacle(pos, radi, height);
+  dtStatus res = sample->addTempObstacle(x, radi, height);
   //update();
 
   if (res == DT_SUCCESS)

@@ -2,6 +2,7 @@
 #include "recast_ros/recast_nodeConfig.h"
 #include "recast_ros/RecastProjectSrv.h"
 #include "recast_ros/RecastPathSrv.h"
+#include "recast_ros/AddObstacleSrv.h"
 #include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
@@ -18,7 +19,8 @@
 
 struct RecastNode
 {
-  RecastNode(ros::NodeHandle &nodeHandle) : nodeHandle_(nodeHandle), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(10.0)
+  RecastNode(ros::NodeHandle &nodeHandle)
+      : nodeHandle_(nodeHandle), noAreaTypes_(20), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(10.0)
   {
     // ros params
     std::string base = ros::package::getPath("recast_demos");
@@ -42,6 +44,7 @@ struct RecastNode
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
     OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("original_mesh", 1);
     RecastPathPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_lines", 1);
+    RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_obstacles", 1);
 
     // create colour list for area types
     colourList_ = {
@@ -74,6 +77,7 @@ struct RecastNode
     // create service (server & client)
     servicePlan_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
     serviceProject_ = nodeHandle_.advertiseService("project_point", &RecastNode::projectPointService, this);
+    serviceAddObstacle_ = nodeHandle_.advertiseService("add_obstacle", &RecastNode::addObstacleService, this);
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
@@ -139,6 +143,40 @@ struct RecastNode
     v.color.g = 0.0f;
     v.color.b = 1.0f;
     v.color.a = 0.6;
+
+    v.lifetime = ros::Duration();
+  }
+  void visualizeObstacle(visualization_msgs::Marker &v, const float *pos, const int &id) // Constructs a marker of Triangle List
+  {
+    v.header.frame_id = "map";
+    v.type = visualization_msgs::Marker::CYLINDER;
+    v.header.stamp = ros::Time::now();
+
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    // Any marker sent with the same namespace and id will overwrite the old one
+    v.ns = "Obstacles";
+    v.id = id;
+
+    // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
+    v.action = visualization_msgs::Marker::ADD;
+    v.pose.position.x = pos[0];
+    v.pose.position.y = pos[1];
+    v.pose.position.z = pos[2];
+    v.pose.orientation.x = 0.0;
+    v.pose.orientation.y = 0.0;
+    v.pose.orientation.z = 0.0;
+    v.pose.orientation.w = 1.0;
+
+    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    v.scale.x = 2.0;
+    v.scale.y = 2.0;
+    v.scale.z = 2.0;
+
+    // Set the color -- be sure to set alpha to something non-zero!
+    v.color.r = 1.0f;
+    v.color.g = 0.0f;
+    v.color.b = 0.0f;
+    v.color.a = 1.0;
 
     v.lifetime = ros::Duration();
   }
@@ -239,6 +277,27 @@ struct RecastNode
       triList_.colors[i] = colourList_[areaList.at(i)];
       triList_.points[i] = p;
     }
+  }
+  bool addObstacleService(recast_ros::AddObstacleSrv::Request &req, recast_ros::AddObstacleSrv::Response &res)
+  {
+    visualization_msgs::Marker newMarker;
+
+    float pos[3] = {req.position.x, req.position.y, req.position.z};
+    float radius = req.radius;
+    float height = req.height;
+
+    obstacleAdded_ = recast_.addRecastObstacle(pos, radius, height);
+
+    if (obstacleAdded_)
+    {
+      ROS_INFO("Obstacle is added");
+      visualizeObstacle(newMarker, pos, (int)obstacleList_.size());
+
+      obstacleList_.push_back(newMarker);
+      recast_.update();
+    }
+
+    return obstacleAdded_;
   }
 
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level) // dynamic reconfiguration, update node parameters and class' private variables
@@ -473,9 +532,9 @@ struct RecastNode
       return;
     }
 
+    pcl::PolygonMesh::Ptr pclMeshPtr;
     pcl::PointCloud<pcl::PointXYZ>::Ptr temp;
     std::vector<Eigen::Vector3d> lineList;
-    pcl::PolygonMesh::Ptr pclMeshPtr;
     std::vector<unsigned char> areaList;
     if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
       ROS_INFO("Could not retrieve NavMesh");
@@ -502,21 +561,11 @@ struct RecastNode
 
     // infinite loop
     // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
-    std::vector<int> listCount = {0, 0, 0};
-
-    float pos[3] = {30, -9, -1.16};
-    float pos1[3] = {30, -9, -1.16};
-    float pos2[3] = {30, -9, -1.16};
-    float pos3[3] = {30, -9, -1.16};
-    float pos4[3] = {30, -73, -1.16};
-    float pos5[3] = {30, -73, -1.16};
-    float pos6[3] = {30, -32, -1.16};
-
-    bool doOnce = true;
+    std::vector<int> listCount = {0, 0, 0, 0};
 
     while (ros::ok())
     {
-      if (updateMeshCheck_)
+      if (updateMeshCheck_ || obstacleAdded_)
       {
         // Clear previous Rviz Markers
         triList_.points.clear();
@@ -530,48 +579,18 @@ struct RecastNode
         lineList.clear();
 
         // Update Navigation mesh based on new config
-        if (!updateNavMesh(recast_, pclMesh, trilabels))
-          ROS_INFO("Map update failed");
-
-        // Get new navigation mesh
-        if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
-          ROS_INFO("FAILED");
-
-        pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
-        // Create Rviz Markers based on new navigation mesh
-        buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
-        updateMeshCheck_ = false; // clear update requirement flag
-        doOnce = true;
-      }
-
-      if (doOnce)
-      {
-        // Add temp obstacle
-        if (recast_.addRecastObstacle(pos, 100.0f, 100.0f))
+        if (updateMeshCheck_)
         {
-          if (recast_.addRecastObstacle(pos1, 100.0f, 100.0f))
-            if (recast_.addRecastObstacle(pos2, 100.0f, 100.0f))
-              if (recast_.addRecastObstacle(pos3, 100.0f, 100.0f))
-                if (recast_.addRecastObstacle(pos4, 100.0f, 100.0f))
-                  if (recast_.addRecastObstacle(pos5, 100.0f, 100.0f))
-                    if (recast_.addRecastObstacle(pos6, 100.0f, 100.0f))
-                      ROS_INFO("Obstacle is added");
-          recast_.update();
+          if (!updateNavMesh(recast_, pclMesh, trilabels))
+            ROS_INFO("Map update failed");
 
-          doOnce = false; // clear update requirement flag
+          //Clear Obstacles' Markers
+          obstacleList_.clear();
+          visualization_msgs::Marker deleteMark;
+          deleteMark.action = visualization_msgs::Marker::DELETEALL;
+          RecastObstaclePub_.publish(deleteMark);
         }
 
-        // Clear previous Rviz Markers
-        triList_.points.clear();
-        triList_.colors.clear();
-
-        lineMarkerList_.points.clear();
-        lineMarkerList_.colors.clear();
-
-        polyVerts.clear();
-        areaList.clear();
-        lineList.clear();
-
         // Get new navigation mesh
         if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
           ROS_INFO("FAILED");
@@ -579,6 +598,10 @@ struct RecastNode
         pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
         // Create Rviz Markers based on new navigation mesh
         buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
+
+        // clear update requirement flag
+        updateMeshCheck_ = false;
+        obstacleAdded_ = false;
       }
 
       // Publish lists
@@ -595,6 +618,14 @@ struct RecastNode
         ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]++);
         OriginalMeshPub_.publish(orgTriList_);
       }
+
+      if (RecastObstaclePub_.getNumSubscribers() >= 1)
+      {
+        ROS_INFO("Published obstacles No %d", listCount[3]++);
+        for (size_t i = 0; i < obstacleList_.size(); i++)
+          RecastObstaclePub_.publish(obstacleList_[i]);
+      }
+
       ros::spinOnce(); // check changes in ros network
       loopRate_.sleep();
     }
@@ -605,19 +636,14 @@ struct RecastNode
   ros::Publisher NavMeshPub_;
   ros::Publisher OriginalMeshPub_;
   ros::Publisher RecastPathPub_;
+  ros::Publisher RecastObstaclePub_;
   ros::Rate loopRate_;
   ros::ServiceServer servicePlan_;
+  ros::ServiceServer serviceAddObstacle_;
   ros::ServiceServer serviceProject_;
   std::string path_;
   std::string pathAreas_;
   recast_ros::RecastPlanner recast_;
-  //Visualization settings
-  visualization_msgs::Marker triList_;
-  visualization_msgs::Marker lineMarkerList_;
-  visualization_msgs::Marker orgTriList_;
-  visualization_msgs::Marker pathList_;
-  visualization_msgs::Marker agentPos_;
-  std::vector<std_msgs::ColorRGBA> colourList_;
   // path planner settings
   double startX_;
   double startY_;
@@ -632,9 +658,18 @@ struct RecastNode
   float agentRadius_;
   float agentMaxClimb_;
   float agentMaxSlope_;
-  const int noAreaTypes_ = 20; // Number of Area Types
+  const int noAreaTypes_; // Number of Area Types
   std::vector<float> areaCostList_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
+  bool obstacleAdded_ = false;   // check whether obstacle is added or not
+  //Visualization settings
+  visualization_msgs::Marker triList_;
+  visualization_msgs::Marker lineMarkerList_;
+  visualization_msgs::Marker orgTriList_;
+  std::vector<visualization_msgs::Marker> obstacleList_;
+  visualization_msgs::Marker pathList_;
+  visualization_msgs::Marker agentPos_;
+  std::vector<std_msgs::ColorRGBA> colourList_;
 };
 
 int main(int argc, char *argv[])

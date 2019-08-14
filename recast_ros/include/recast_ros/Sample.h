@@ -176,6 +176,8 @@ public:
 	virtual class InputGeom *getInputGeom() { return m_geom; }
 	virtual class dtNavMesh *getNavMesh() { return m_navMesh; }
 	virtual class dtNavMeshQuery *getNavMeshQuery() { return m_navQuery; }
+	virtual void getTilePos(const float *pos, int &tx, int &ty) = 0;
+
 	//virtual class dtCrowd* getCrowd() { return m_crowd; }
 	virtual float getAgentRadius() { return m_agentRadius; }
 	virtual float getAgentHeight() { return m_agentHeight; }

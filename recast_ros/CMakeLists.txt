@@ -96,6 +96,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    FILES
    RecastPathSrv.srv
    RecastProjectSrv.srv
+   AddObstacleSrv.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -181,6 +182,10 @@ add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
 add_executable(test_planning_service src/nodes/test_planning_service.cpp)
 target_link_libraries(test_planning_service ${catkin_LIBRARIES})
 add_dependencies(test_planning_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(test_add_obstacles src/nodes/test_add_obstacles.cpp)
+target_link_libraries(test_add_obstacles ${catkin_LIBRARIES})
+add_dependencies(test_add_obstacles ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(test_planning_service_interactive src/nodes/test_planning_service_interactive.cpp)
 target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})

@@ -83,7 +83,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /recast_node/obstacle_list
+      Marker Topic: /recast_node/recast_obstacles
       Name: Marker
       Namespaces:
         {}
@@ -124,9 +124,9 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 3.9059898853302
+        Y: -3.1287035942077637
+        Z: -0.6332613229751587
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -154,4 +154,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 973
-  Y: 74
+  Y: 44
