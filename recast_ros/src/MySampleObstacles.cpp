@@ -265,7 +265,7 @@ int MySampleObstacles::rasterizeTileLayers(
 	const int tx, const int ty,
 	const rcConfig &cfg,
 	TileCacheData *tiles,
-	const int maxTiles) //, const std::vector<char> &areaTypes)
+	const int maxTiles, const std::vector<char> &areaTypes)
 {
 	if (!m_geom || !m_geom->getMesh() || !m_geom->getChunkyMesh())
 	{
@@ -279,6 +279,17 @@ int MySampleObstacles::rasterizeTileLayers(
 	const float *verts = m_geom->getMesh()->getVerts();
 	const int nverts = m_geom->getMesh()->getVertCount();
 	const rcChunkyTriMesh *chunkyMesh = m_geom->getChunkyMesh();
+
+	const int *geoTris = m_geom->getMesh()->getTris();
+	const int geoNumTris = m_geom->getMesh()->getTriCount();
+
+	unsigned char *m_triareas = new unsigned char[geoNumTris];
+
+	memset(m_triareas, 0, geoNumTris * sizeof(unsigned char));
+
+	if (geoNumTris == areaTypes.size())
+		for (int k = 0; k < areaTypes.size(); k++)
+			m_triareas[k] = areaTypes[k];
 
 	// Tile bounds.
 	const float tcs = cfg.tileSize * cfg.cs;
@@ -332,7 +343,6 @@ int MySampleObstacles::rasterizeTileLayers(
 		return 0; // empty
 	}
 
-	int j = 0;
 	for (int i = 0; i < ncid; ++i)
 	{
 		const rcChunkyTriMeshNode &node = chunkyMesh->nodes[cid[i]];
@@ -350,6 +360,10 @@ int MySampleObstacles::rasterizeTileLayers(
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
 			return 0;
 	}
+	if (!rcRasterizeTriangles(m_ctx, verts, nverts, geoTris, m_triareas, geoNumTris, *rc.solid, tcfg.walkableClimb))
+		return 0;
+
+	delete[] m_triareas;
 
 	// Once all geometry is rasterized, we do initial pass of filtering to
 	// remove unwanted overhangs caused by the conservative rasterization
@@ -806,16 +820,16 @@ dtObstacleRef hitTestObstacle(const dtTileCache *tc, const float *sp, const floa
 // };
 
 MySampleObstacles::MySampleObstacles() : m_keepInterResults(false),
-					   m_tileCache(0),
-					   m_cacheBuildTimeMs(0),
-					   m_cacheCompressedSize(0),
-					   m_cacheRawSize(0),
-					   m_cacheLayerCount(0),
-					   m_cacheBuildMemUsage(0),
-					   //	m_drawMode(DRAWMODE_NAVMESH),
-					   m_maxTiles(0),
-					   m_maxPolysPerTile(0),
-					   m_tileSize(48)
+										 m_tileCache(0),
+										 m_cacheBuildTimeMs(0),
+										 m_cacheCompressedSize(0),
+										 m_cacheRawSize(0),
+										 m_cacheLayerCount(0),
+										 m_cacheBuildMemUsage(0),
+										 //	m_drawMode(DRAWMODE_NAVMESH),
+										 m_maxTiles(0),
+										 m_maxPolysPerTile(0),
+										 m_tileSize(48)
 {
 	resetCommonSettings();
 
@@ -1298,7 +1312,7 @@ bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes)
 		{
 			TileCacheData tiles[MAX_LAYERS];
 			memset(tiles, 0, sizeof(tiles));
-			int ntiles = rasterizeTileLayers(x, y, cfg, tiles, MAX_LAYERS);
+			int ntiles = rasterizeTileLayers(x, y, cfg, tiles, MAX_LAYERS, areaTypes);
 			for (int i = 0; i < ntiles; ++i)
 			{
 				TileCacheData *tile = &tiles[i];
@@ -1357,7 +1371,7 @@ void MySampleObstacles::handleUpdate(const float dt)
 
 	dtStatus result = DT_FAILURE;
 	bool check = false;
-	
+
 	while (!check)
 		result = m_tileCache->update(dt, m_navMesh, &check);
 

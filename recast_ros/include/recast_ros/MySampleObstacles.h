@@ -91,7 +91,7 @@ private:
 	MySampleObstacles(const MySampleObstacles&);
 	MySampleObstacles& operator=(const MySampleObstacles&);
 
-	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles);//,const std::vector<char> &areaTypes);
+	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles,const std::vector<char> &areaTypes);
 };
 
 
