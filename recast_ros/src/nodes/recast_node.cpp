@@ -20,7 +20,7 @@
 struct RecastNode
 {
   RecastNode(ros::NodeHandle &nodeHandle)
-      : nodeHandle_(nodeHandle), noAreaTypes_(20), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(10.0)
+      : nodeHandle_(nodeHandle), noAreaTypes_(20), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(100.0)
   {
     // ros params
     std::string base = ros::package::getPath("recast_demos");
@@ -363,6 +363,8 @@ struct RecastNode
 
   bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
   {
+    ros::WallTime startFunc, endFunc, pathStart, pathEnd;
+    startFunc = ros::WallTime::now();
     //Get Input
     ROS_INFO("Input positions are;");
     startX_ = req.startXYZ.x;
@@ -386,7 +388,12 @@ struct RecastNode
 
     // query recast/detour for the path
     // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
+    pathStart = ros::WallTime::now();
     bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_);
+    pathEnd = ros::WallTime::now();
+
+    double exec_time = (pathEnd - pathStart).toNSec() * (1e-6);
+    ROS_INFO("Path Query Execution Time (ms): %f", exec_time);
 
     if (!checkStatus)
     {
@@ -470,6 +477,12 @@ struct RecastNode
 
     RecastPathPub_.publish(pathList_);
     RecastPathPub_.publish(agentPos_);
+
+    endFunc = ros::WallTime::now();
+
+    exec_time = (endFunc - startFunc).toNSec() * (1e-6);
+
+    ROS_INFO("Whole execution time (ms): %f", exec_time);
 
     return checkStatus;
   }
