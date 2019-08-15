@@ -146,7 +146,7 @@ struct RecastNode
 
     v.lifetime = ros::Duration();
   }
-  void visualizeObstacle(visualization_msgs::Marker &v, const float *pos, const int &id) // Constructs a marker of Triangle List
+  void visualizeObstacle(visualization_msgs::Marker &v, const float *pos, const int &id, const float &radi, const float &height) // Constructs a marker of Triangle List
   {
     v.header.frame_id = "map";
     v.type = visualization_msgs::Marker::CYLINDER;
@@ -161,16 +161,16 @@ struct RecastNode
     v.action = visualization_msgs::Marker::ADD;
     v.pose.position.x = pos[0];
     v.pose.position.y = pos[1];
-    v.pose.position.z = pos[2];
+    v.pose.position.z = pos[2]+height/2;
     v.pose.orientation.x = 0.0;
     v.pose.orientation.y = 0.0;
     v.pose.orientation.z = 0.0;
     v.pose.orientation.w = 1.0;
 
     // Set the scale of the marker -- 1x1x1 here means 1m on a side
-    v.scale.x = 2.0;
-    v.scale.y = 2.0;
-    v.scale.z = 2.0;
+    v.scale.x = 2*radi;
+    v.scale.y = 2*radi;
+    v.scale.z = height;
 
     // Set the color -- be sure to set alpha to something non-zero!
     v.color.r = 1.0f;
@@ -291,7 +291,7 @@ struct RecastNode
     if (obstacleAdded_)
     {
       ROS_INFO("Obstacle is added");
-      visualizeObstacle(newMarker, pos, (int)obstacleList_.size());
+      visualizeObstacle(newMarker, pos, (int)obstacleList_.size(), radius, height);
 
       obstacleList_.push_back(newMarker);
       recast_.update();
