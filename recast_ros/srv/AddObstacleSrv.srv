@@ -1,0 +1,4 @@
+geometry_msgs/Point position
+float64 radius
+float64 height
+---

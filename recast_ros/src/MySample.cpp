@@ -87,7 +87,6 @@ void MySample::handleSettings()
 /*
 	if (imguiCheck("Keep Itermediate Results", m_keepInterResults))
 		m_keepInterResults = !m_keepInterResults;
-
 	imguiSeparator();
 	
 	char msg[64];
@@ -99,7 +98,6 @@ void MySample::handleSettings()
 /*
 void MySample::handleTools()
 {
-
 	int type = !m_tool ? TOOL_NONE : m_tool->type();
 	
 	if (imguiCheck("Test Navmesh", type == TOOL_NAVMESH_TESTER))
@@ -124,24 +122,17 @@ void MySample::handleTools()
 	}
 	
 	imguiSeparatorLine();
-
 	imguiIndent();
-
 	if (m_tool)
 		m_tool->handleMenu();
-
 	imguiUnindent();
-
 }
-
 void MySample::handleDebugMode()
 {
-
 	// Check which modes are valid.
 	bool valid[MAX_DRAWMODE];
 	for (int i = 0; i < MAX_DRAWMODE; ++i)
 		valid[i] = false;
-
 	if (m_geom)
 	{
 		valid[DRAWMODE_NAVMESH] = m_navMesh != 0;
@@ -166,10 +157,8 @@ void MySample::handleDebugMode()
 	int unavail = 0;
 	for (int i = 0; i < MAX_DRAWMODE; ++i)
 		if (!valid[i]) unavail++;
-
 	if (unavail == MAX_DRAWMODE)
 		return;
-
 	imguiLabel("Draw");
 	if (imguiCheck("Input Mesh", m_drawMode == DRAWMODE_MESH, valid[DRAWMODE_MESH]))
 		m_drawMode = DRAWMODE_MESH;
@@ -211,12 +200,9 @@ void MySample::handleDebugMode()
 		imguiValue("Tick 'Keep Itermediate Results'");
 		imguiValue("to see more debug mode options.");
 	}
-
 }
-
 void MySample::handleRender()
 {
-
 	if (!m_geom || !m_geom->getMesh())
 		return;
 	
@@ -224,7 +210,6 @@ void MySample::handleRender()
 	
 	glEnable(GL_FOG);
 	glDepthMask(GL_TRUE);
-
 	const float texScale = 1.0f / (m_cellSize * 10.0f);
 	
 	if (m_drawMode != DRAWMODE_NAVMESH_TRANS)
@@ -238,7 +223,6 @@ void MySample::handleRender()
 	
 	glDisable(GL_FOG);
 	glDepthMask(GL_FALSE);
-
 	// Draw bounds
 	const float* bmin = m_geom->getNavMeshBoundsMin();
 	const float* bmax = m_geom->getNavMeshBoundsMax();
@@ -267,7 +251,6 @@ void MySample::handleRender()
 	
 	if (m_chf && m_drawMode == DRAWMODE_COMPACT)
 		duDebugDrawCompactHeightfieldSolid(&dd, *m_chf);
-
 	if (m_chf && m_drawMode == DRAWMODE_COMPACT_DISTANCE)
 		duDebugDrawCompactHeightfieldDistance(&dd, *m_chf);
 	if (m_chf && m_drawMode == DRAWMODE_COMPACT_REGIONS)
@@ -325,22 +308,16 @@ void MySample::handleRender()
 	}
 	
 	m_geom->drawConvexVolumes(&dd);
-
 	if (m_tool)
 		m_tool->handleRender();
 	renderToolStates();
-
 	glDepthMask(GL_TRUE);
-
 }
-
 void MySample::handleRenderOverlay(double* proj, double* model, int* view)
 {
-
 	if (m_tool)
 		m_tool->handleRenderOverlay(proj, model, view);
 	renderOverlayToolStates(proj, model, view);
-
 }
 */
 void MySample::handleMeshChanged(class InputGeom* geom)
@@ -749,5 +726,3 @@ bool MySample::handleBuild(const std::vector<char> & areaTypes)
 
 	return true;
 }
-
-

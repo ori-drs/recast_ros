@@ -1,5 +1,5 @@
 #include "recast_ros/RecastPlanner.h"
-#include "recast_ros/MySample.h"
+#include "recast_ros/MySampleObstacles.h"
 #include "Recast.h"
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
@@ -34,12 +34,13 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   if (!geom->load(&ctx, pclMesh, needToRotateMesh))
     return false;
   geom->setBuildSettings(stg);
-  sample = boost::shared_ptr<Sample>(new MySample());
+  sample = boost::shared_ptr<Sample>(new MySampleObstacles());
   sample->setContext(&ctx);
-  sample->handleMeshChanged(geom.get());
+  sample->handleMeshChanged(geom.get()); //, areaTypes);
   sample->handleSettings();
   sample->handleBuild(areaTypes);
   //TODO: retrun false if fail
+
   return true;
 }
 
@@ -55,7 +56,7 @@ bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &
   return build(pclMesh, areaTypes);
 }
 
-bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float>& areaCostList, const int& areaTypeCount)
+bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount)
 {
   if (!sample)
     return false;
@@ -75,7 +76,6 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   filter.setIncludeFlags(0x3);
   filter.setExcludeFlags(0x0);
 
-  
   for (int index = 0; index < areaTypeCount; index++)
   {
     filter.setAreaCost(index, areaCostList[index]);
@@ -145,8 +145,29 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   }
   return foundFullPath;
 }
+//Assume cylindrical obstacle
+bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
+{
+  float x[3] = {pos[0], pos[2], -pos[1]};
 
-bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char& areaType)
+  dtStatus res = sample->addTempObstacle(x, radi, height);
+  //update();
+
+  if (res == DT_SUCCESS)
+    return true;
+  else
+    return false;
+}
+
+void RecastPlanner::update()
+{
+  // Update sample simulation.
+  printf("Recast Update\n");
+
+  sample->handleUpdate(0.01);
+}
+
+bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType)
 {
   if (!sample)
     return false;
@@ -222,6 +243,12 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
 
   // go through all tiles
   pclcloud->points.reserve(mesh->getMaxTiles() * 10 * 3);
+
+  if (mesh->getMaxTiles() < 1)
+  {
+    std::cout << "Max tiles are 0";
+    return false;
+  }
   for (int i = 0; i < mesh->getMaxTiles(); ++i)
   {
     const dtMeshTile *tile = mesh->getTile(i);
@@ -262,6 +289,11 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
   pcl::toPCLPointCloud2(*pclcloud, pclmesh->cloud);
   int ntri = pclcloud->points.size() / 3;
   pclmesh->polygons.resize(ntri);
+
+  //pcl::PointCloud<pcl::PointXYZ> polyVerts;
+
+  // pcl::fromPCLPointCloud2(pclmesh->cloud, polyVerts);
+
   for (int i = 0; i < ntri; i++)
   {
     pclmesh->polygons[i].vertices.resize(3);
@@ -328,4 +360,3 @@ bool recast_ros::loadAreas(const std::string &path, std::vector<char> &labels)
   std::copy(iter, eos, std::back_inserter(labels));
   return labels.size() > 0;
 }
-

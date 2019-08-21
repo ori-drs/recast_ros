@@ -32,34 +32,33 @@
 #include <stdio.h>
 
 #ifdef WIN32
-#	define snprintf _snprintf
+#define snprintf _snprintf
 #endif
 
-Sample::Sample() :
-	m_geom(0),
-	m_navMesh(0),
-	m_navQuery(0),
-//	m_crowd(0),
-//	m_navMeshDrawFlags(DU_DRAWNAVMESH_OFFMESHCONS|DU_DRAWNAVMESH_CLOSEDLIST),
-//	m_tool(0),
-	m_ctx(0)
+Sample::Sample() : m_geom(0),
+				   m_navMesh(0),
+				   m_navQuery(0),
+				   //	m_crowd(0),
+				   //	m_navMeshDrawFlags(DU_DRAWNAVMESH_OFFMESHCONS|DU_DRAWNAVMESH_CLOSEDLIST),
+				   //	m_tool(0),
+				   m_ctx(0)
 {
 	resetCommonSettings();
 	m_navQuery = dtAllocNavMeshQuery();
-//	m_crowd = dtAllocCrowd();
+	//	m_crowd = dtAllocCrowd();
 
-//	for (int i = 0; i < MAX_TOOLS; i++)
-//		m_toolStates[i] = 0;
+	//	for (int i = 0; i < MAX_TOOLS; i++)
+	//		m_toolStates[i] = 0;
 }
 
 Sample::~Sample()
 {
 	dtFreeNavMeshQuery(m_navQuery);
 	dtFreeNavMesh(m_navMesh);
-//	dtFreeCrowd(m_crowd);
-//	delete m_tool;
-//	for (int i = 0; i < MAX_TOOLS; i++)
-//		delete m_toolStates[i];
+	//	dtFreeCrowd(m_crowd);
+	//	delete m_tool;
+	//	for (int i = 0; i < MAX_TOOLS; i++)
+	//		delete m_toolStates[i];
 }
 /*
 void Sample::setTool(SampleTool* tool)
@@ -102,11 +101,11 @@ void Sample::handleRender()
 //{
 //}
 
-void Sample::handleMeshChanged(InputGeom* geom)
+void Sample::handleMeshChanged(InputGeom *geom) //, const std::vector<char> &areaTypes)
 {
 	m_geom = geom;
 
-	const BuildSettings* buildSettings = geom->getBuildSettings();
+	const BuildSettings *buildSettings = geom->getBuildSettings();
 	if (buildSettings)
 	{
 		m_cellSize = buildSettings->cellSize;
@@ -126,7 +125,7 @@ void Sample::handleMeshChanged(InputGeom* geom)
 	}
 }
 
-void Sample::collectSettings(BuildSettings& settings)
+void Sample::collectSettings(BuildSettings &settings)
 {
 	settings.cellSize = m_cellSize;
 	settings.cellHeight = m_cellHeight;
@@ -143,7 +142,6 @@ void Sample::collectSettings(BuildSettings& settings)
 	settings.detailSampleMaxError = m_detailSampleMaxError;
 	settings.partitionType = m_partitionType;
 }
-
 
 void Sample::resetCommonSettings()
 {
@@ -165,7 +163,7 @@ void Sample::resetCommonSettings()
 
 void Sample::handleCommonSettings()
 {
-/*
+	/*
 	imguiLabel("Rasterization");
 	imguiSlider("Cell Size", &m_cellSize, 0.1f, 1.0f, 0.01f);
 	imguiSlider("Cell Height", &m_cellHeight, 0.1f, 1.0f, 0.01f);
@@ -235,21 +233,21 @@ void Sample::handleStep()
 		m_tool->handleStep();
 }
 */
-bool Sample::handleBuild(const std::vector<char> & areaTypes)
+bool Sample::handleBuild(const std::vector<char> &areaTypes)
 {
 	return true;
 }
 
-/*
 void Sample::handleUpdate(const float dt)
 {
-	if (m_tool)
+	printf("Sample Update\n");
+
+	/*if (m_tool)
 		m_tool->handleUpdate(dt);
-	updateToolStates(dt);
+	updateToolStates(dt);*/
 }
 
-
-void Sample::updateToolStates(const float dt)
+/* void Sample::updateToolStates(const float dt)
 {
 	for (int i = 0; i < MAX_TOOLS; i++)
 	{
@@ -292,5 +290,4 @@ void Sample::renderOverlayToolStates(double* proj, double* model, int* view)
 		if (m_toolStates[i])
 			m_toolStates[i]->handleRenderOverlay(proj, model, view);
 	}
-}
-*/
+} */

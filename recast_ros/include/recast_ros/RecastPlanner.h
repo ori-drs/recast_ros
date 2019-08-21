@@ -18,6 +18,8 @@ public:
   bool query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float>& areaCostList, const int & areaTypeCount);
   bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char& areaType);
   boost::shared_ptr<Sample> getMySample() { return sample; }
+  bool addRecastObstacle(const float *pos, const float &radi, const float &height);
+  void update();
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList) const;
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh) const;
   bool getNavMesh(std::vector<Eigen::Vector3d> &lineList) const;
@@ -33,5 +35,8 @@ private:
 };
 
 bool loadAreas(const std::string &path, std::vector<char> &labels);
+
+template <class T>
+inline T rcClamp(T v, T mn, T mx) { return v < mn ? mn : (v > mx ? mx : v); }
 
 } // namespace recast_ros
