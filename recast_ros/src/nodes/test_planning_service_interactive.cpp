@@ -9,6 +9,7 @@ public:
   {
     // ros params
     node_handle_.param("target_topic", target_topic_, std::string("/move_base_simple/goal"));
+    node_handle_.param("path_service", path_service_, std::string("/recast_node/plan_path"));
     node_handle_.param("loop_rate", loop_rate_, 1.0);
 
     // subscribe target
@@ -22,7 +23,7 @@ public:
   void run()
   {
     // ros
-    ros::ServiceClient client_recast = node_handle_.serviceClient<recast_ros::RecastPathSrv>("/recast_node/plan_path");
+    ros::ServiceClient client_recast = node_handle_.serviceClient<recast_ros::RecastPathSrv>(path_service_);
 
     // loop
     ros::Rate loop_rate(loop_rate_);
@@ -55,6 +56,7 @@ protected:
   ros::NodeHandle node_handle_;
   ros::Subscriber subscriber_;
   std::string target_topic_;
+  std::string path_service_;
   double loop_rate_;
   geometry_msgs::Point target_;
 };

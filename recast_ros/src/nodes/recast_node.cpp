@@ -37,6 +37,7 @@ struct RecastNode
     nodeHandle_.param("agent_radius", agentRadius_, 0.2f);
     nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41f);
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0f);
+    nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
 
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
@@ -476,8 +477,10 @@ struct RecastNode
     // Dynamic Reconfiguration start
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType f;
-    f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
-    server.setCallback(f);
+    if (dynamicReconfigure_) {
+      f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
+      server.setCallback(f);
+    }
 
     // Visualization
 
@@ -574,6 +577,7 @@ struct RecastNode
   float agentMaxClimb_;
   float agentMaxSlope_;
   const int noAreaTypes_ = 20; // Number of Area Types
+  bool dynamicReconfigure_;
   std::vector<float> areaCostList_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
 };

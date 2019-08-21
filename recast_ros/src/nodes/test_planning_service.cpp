@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "test_planning_service");
 
     ros::NodeHandle clientNode("~");
-    ros::ServiceClient client = clientNode.serviceClient<recast_ros::RecastPathSrv>("/recast_node/path_plan");
+    ros::ServiceClient client = clientNode.serviceClient<recast_ros::RecastPathSrv>("/recast_node/plan_path");
 
     geometry_msgs::Point firstArr, secondArr;
     std::vector<double> myCords(6,1);
