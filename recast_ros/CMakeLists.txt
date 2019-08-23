@@ -38,8 +38,9 @@ set(RECAST_INCLUDE_DIRS
   ${RECAST_DIR}/DebugUtils/Include
   ${RECAST_DIR}/Detour/Include
   ${RECAST_DIR}/DetourTileCache/Include
-   ${RECAST_DIR}/DetourCrowd/Include
+  ${RECAST_DIR}/DetourCrowd/Include
   ${RECAST_DIR}/Recast/Include
+  ${RECAST_DIR}/RecastDemo/Contrib/fastlz
   include
 )
 include_directories(${RECAST_INCLUDE_DIRS})
@@ -50,7 +51,8 @@ file(GLOB RecastSources
   ${RECAST_DIR}/DetourCrowd/Source/*.cpp
   ${RECAST_DIR}/Recast/Source/*.cpp
   ${RECAST_DIR}/Recast/Source/*.c
-  ${RECASTDEMO_DIR}/Source/*.cpp
+  ${RECAST_DIR}/RecastDemo/Contrib/fastlz/*.c
+ #${RECAST_DIR}/RecastDemo/Source/*.cpp
   src/*.cpp
 )
 include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake) 
@@ -97,6 +99,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    RecastPathSrv.srv
    RecastProjectSrv.srv
    AddObstacleSrv.srv
+   RemoveAllObstaclesSrv.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -186,6 +189,10 @@ add_dependencies(test_planning_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 add_executable(test_add_obstacles src/nodes/test_add_obstacles.cpp)
 target_link_libraries(test_add_obstacles ${catkin_LIBRARIES})
 add_dependencies(test_add_obstacles ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(test_remove_all_obstacles src/nodes/test_remove_all_obstacles.cpp)
+target_link_libraries(test_remove_all_obstacles ${catkin_LIBRARIES})
+add_dependencies(test_remove_all_obstacles ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(test_planning_service_interactive src/nodes/test_planning_service_interactive.cpp)
 target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})

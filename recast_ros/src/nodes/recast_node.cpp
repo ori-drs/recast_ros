@@ -3,6 +3,7 @@
 #include "recast_ros/RecastProjectSrv.h"
 #include "recast_ros/RecastPathSrv.h"
 #include "recast_ros/AddObstacleSrv.h"
+#include "recast_ros/RemoveAllObstaclesSrv.h"
 #include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
@@ -40,6 +41,8 @@ struct RecastNode
     nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41f);
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0f);
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
+    nodeHandle_.param("loop_rate", frequency_, 100.0);
+
 
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
@@ -79,6 +82,7 @@ struct RecastNode
     servicePlan_ = nodeHandle_.advertiseService("plan_path", &RecastNode::findPathService, this);
     serviceProject_ = nodeHandle_.advertiseService("project_point", &RecastNode::projectPointService, this);
     serviceAddObstacle_ = nodeHandle_.advertiseService("add_obstacle", &RecastNode::addObstacleService, this);
+    serviceRemoveAllObstacles_ = nodeHandle_.advertiseService("remove_all_obstacles", &RecastNode::removeAllObstacles, this);
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
@@ -162,15 +166,15 @@ struct RecastNode
     v.action = visualization_msgs::Marker::ADD;
     v.pose.position.x = pos[0];
     v.pose.position.y = pos[1];
-    v.pose.position.z = pos[2]+height/2;
+    v.pose.position.z = pos[2] + height / 2;
     v.pose.orientation.x = 0.0;
     v.pose.orientation.y = 0.0;
     v.pose.orientation.z = 0.0;
     v.pose.orientation.w = 1.0;
 
     // Set the scale of the marker -- 1x1x1 here means 1m on a side
-    v.scale.x = 2*radi;
-    v.scale.y = 2*radi;
+    v.scale.x = 2 * radi;
+    v.scale.y = 2 * radi;
     v.scale.z = height;
 
     // Set the color -- be sure to set alpha to something non-zero!
@@ -300,7 +304,13 @@ struct RecastNode
 
     return obstacleAdded_;
   }
+  bool removeAllObstacles(recast_ros::RemoveAllObstaclesSrv::Request &req, recast_ros::RemoveAllObstaclesSrv::Response &res)
+  {
+    recast_.clearAllRecastObstacles();
+    obstacleRemoved_ = true;
 
+    return obstacleRemoved_;
+  }
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level) // dynamic reconfiguration, update node parameters and class' private variables
   {
     ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
@@ -317,6 +327,8 @@ struct RecastNode
     agentRadius_ = config.agent_radius;
     agentMaxClimb_ = config.agent_max_climb;
     agentMaxSlope_ = config.agent_max_slope;
+    frequency_ = config.loop_rate;
+    loopRate_ = ros::Rate(frequency_);
 
     /*    if (areaCostList_.size() > 0)
       areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
@@ -556,7 +568,8 @@ struct RecastNode
     // Dynamic Reconfiguration start
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType f;
-    if (dynamicReconfigure_) {
+    if (dynamicReconfigure_)
+    {
       f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
       server.setCallback(f);
     }
@@ -581,7 +594,7 @@ struct RecastNode
 
     while (ros::ok())
     {
-      if (updateMeshCheck_ || obstacleAdded_)
+      if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_)
       {
         // Clear previous Rviz Markers
         triList_.points.clear();
@@ -600,6 +613,14 @@ struct RecastNode
           if (!updateNavMesh(recast_, pclMesh, trilabels))
             ROS_INFO("Map update failed");
 
+          //Clear Obstacles' Markers
+          obstacleList_.clear();
+          visualization_msgs::Marker deleteMark;
+          deleteMark.action = visualization_msgs::Marker::DELETEALL;
+          RecastObstaclePub_.publish(deleteMark);
+        }
+        if (obstacleRemoved_)
+        {
           //Clear Obstacles' Markers
           obstacleList_.clear();
           visualization_msgs::Marker deleteMark;
@@ -654,8 +675,10 @@ struct RecastNode
   ros::Publisher RecastPathPub_;
   ros::Publisher RecastObstaclePub_;
   ros::Rate loopRate_;
+  double frequency_ = 100.0;
   ros::ServiceServer servicePlan_;
   ros::ServiceServer serviceAddObstacle_;
+  ros::ServiceServer serviceRemoveAllObstacles_;
   ros::ServiceServer serviceProject_;
   std::string path_;
   std::string pathAreas_;
@@ -679,6 +702,7 @@ struct RecastNode
   std::vector<float> areaCostList_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
+  bool obstacleRemoved_ = false;
   //Visualization settings
   visualization_msgs::Marker triList_;
   visualization_msgs::Marker lineMarkerList_;

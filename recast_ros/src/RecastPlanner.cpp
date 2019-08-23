@@ -158,6 +158,11 @@ bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const
   else
     return false;
 }
+void RecastPlanner::clearAllRecastObstacles()
+{
+  sample->clearAllTempObstacles();
+  this->update();
+}
 
 void RecastPlanner::update()
 {

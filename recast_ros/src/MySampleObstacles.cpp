@@ -1190,7 +1190,6 @@ void MySampleObstacles::clearAllTempObstacles()
 			continue;
 		m_tileCache->removeObstacle(m_tileCache->getObstacleRef(ob));
 	}
-	printf("does this run2?\n");
 }
 
 bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes)

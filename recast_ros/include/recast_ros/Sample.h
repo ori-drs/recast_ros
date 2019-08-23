@@ -24,7 +24,6 @@
 #include "DetourStatus.h"
 #include <vector>
 
-
 /* /// Tool types.
 enum SampleToolType
 {
@@ -86,7 +85,7 @@ enum SamplePolyFlags
 	SAMPLE_POLYFLAGS_DISABLED = 0x10, // Disabled polygon
 	SAMPLE_POLYFLAGS_ALL = 0xffff	 // All abilities.
 };
- 
+
 enum SamplePartitionType
 {
 	SAMPLE_PARTITION_WATERSHED,
@@ -124,7 +123,7 @@ protected:
 	class InputGeom *m_geom;
 	class dtNavMesh *m_navMesh;
 	class dtNavMeshQuery *m_navQuery;
-//	class dtQueryFilter *m_filter;
+	//	class dtQueryFilter *m_filter;
 	//class dtCrowd* m_crowd;
 
 	//unsigned char m_navMeshDrawFlags;
@@ -167,11 +166,12 @@ public:
 	//virtual void handleStep();
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
-	virtual void handleMeshChanged(class InputGeom *geom);//, const std::vector<char> &areaTypes);
+	virtual void handleMeshChanged(class InputGeom *geom); //, const std::vector<char> &areaTypes);
 	virtual bool handleBuild(const std::vector<char> &areaTypes);
 	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);
-	virtual dtStatus addTempObstacle(const float *pos,const float &radi,const float &height) = 0;
+	virtual dtStatus addTempObstacle(const float *pos, const float &radi, const float &height) = 0;
+	virtual void clearAllTempObstacles() = 0;
 
 	virtual class InputGeom *getInputGeom() { return m_geom; }
 	virtual class dtNavMesh *getNavMesh() { return m_navMesh; }
@@ -183,8 +183,8 @@ public:
 	virtual float getAgentHeight() { return m_agentHeight; }
 	virtual float getAgentClimb() { return m_agentMaxClimb; }
 
-//	virtual float getMyAreaCost(const int &index);
-//	virtual void  setMyAreaCost(const int &index, const int &cost);
+	//	virtual float getMyAreaCost(const int &index);
+	//	virtual void  setMyAreaCost(const int &index, const int &cost);
 
 	//unsigned char getNavMeshDrawFlags() const { return m_navMeshDrawFlags; }
 	//void setNavMeshDrawFlags(unsigned char flags) { m_navMeshDrawFlags = flags; }
