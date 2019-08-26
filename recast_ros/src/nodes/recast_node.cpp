@@ -43,7 +43,6 @@ struct RecastNode
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
 
-
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
     OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("original_mesh", 1);
@@ -220,34 +219,40 @@ struct RecastNode
     ROS_INFO("NavMesh is updated");
     return true;
   }
-  void buildOriginalMeshVisualization(visualization_msgs::Marker &orgTriList, const pcl::PointCloud<pcl::PointXYZ> &triVerts)
+  void buildOriginalMeshVisualization(visualization_msgs::Marker &orgTriList, const pcl::PolygonMesh &pclMesh, pcl::PointCloud<pcl::PointXYZ>::Ptr pclCloud, const std::vector<char> &trilabels)
   {
     geometry_msgs::Point p;
     std_msgs::ColorRGBA c;
     c.a = 1.0; // Set Alpha to 1 for visibility
 
-    orgTriList_.colors.resize(triVerts.size());
-    orgTriList_.points.resize(triVerts.size());
-    for (size_t i = 0; i < triVerts.size(); i++)
+    pcl::fromPCLPointCloud2(pclMesh.cloud, *pclCloud);
+    int npoly = pclMesh.polygons.size();
+
+    int id = 0;
+    orgTriList_.colors.resize(3 * npoly);
+    orgTriList_.points.resize(3 * npoly);
+    for (int i = 0; i < npoly; i++)
     {
-      p.x = triVerts.at(i).x;
-      p.y = triVerts.at(i).y;
-      p.z = triVerts.at(i).z;
+      for (int j = 0; j < 3; j++)
+      {
+        id = pclMesh.polygons[i].vertices[j];
 
-      c.r = 0.2;
-      c.b = 1;
-      c.g = 0.6;
+        p.x = pclCloud->points[id].x;
+        p.y = pclCloud->points[id].y;
+        p.z = pclCloud->points[id].z;
 
-      orgTriList_.colors[i] = c;
-      orgTriList_.points[i] = p;
+        orgTriList_.colors[3 * i + j] = colourList_[trilabels[i]];
+        orgTriList_.points[3 * i + j] = p;
+      }
     }
+
     ROS_INFO("Original Mesh is built\n");
   }
 
   // Create RViz Markers based on Nav Mesh
   void buildNavMeshVisualization(visualization_msgs::Marker &triList, visualization_msgs::Marker &lineMarkerList,
                                  const pcl::PointCloud<pcl::PointXYZ> &polyVerts,
-                                 const std::vector<Eigen::Vector3d> &lineList, const std::vector<unsigned char> areaList)
+                                 const std::vector<Eigen::Vector3d> &lineList, const std::vector<unsigned char> &areaList)
   {
 
     ROS_INFO("NavMesh Visualization is built\n");
@@ -559,7 +564,8 @@ struct RecastNode
     }
 
     pcl::PolygonMesh::Ptr pclMeshPtr;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr temp;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr temp, pclOriginalCloud;
+    pclOriginalCloud.reset(new pcl::PointCloud<pcl::PointXYZ>());
     std::vector<Eigen::Vector3d> lineList;
     std::vector<unsigned char> areaList;
     if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
@@ -586,10 +592,10 @@ struct RecastNode
     pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
 
     buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
-    buildOriginalMeshVisualization(orgTriList_, triVerts);
+    buildOriginalMeshVisualization(orgTriList_, pclMesh, pclOriginalCloud, trilabels);
 
     // infinite loop
-    // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List
+    // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Line List, Index = 3 -> Obstacle List
     std::vector<int> listCount = {0, 0, 0, 0};
 
     while (ros::ok())
