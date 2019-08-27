@@ -9,6 +9,7 @@
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/vtk_lib_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <dynamic_reconfigure/server.h>
@@ -87,6 +88,7 @@ struct RecastNode
     serviceProject_ = nodeHandle_.advertiseService("project_point", &RecastNode::projectPointService, this);
     serviceAddObstacle_ = nodeHandle_.advertiseService("add_obstacle", &RecastNode::addObstacleService, this);
     serviceRemoveAllObstacles_ = nodeHandle_.advertiseService("remove_all_obstacles", &RecastNode::removeAllObstacles, this);
+    serviceInputMap_ = nodeHandle_.advertiseService("input_mesh", &RecastNode::inputMeshService, this);
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
@@ -104,7 +106,18 @@ struct RecastNode
 
   bool inputMeshService(recast_ros::InputMeshSrv::Request &req, recast_ros::InputMeshSrv::Response &res)
   {
-    return false;
+    newMapReceived_ = true;
+
+    ROS_WARN("New Map is received, building new NavMesh...");
+
+    pcl_conversions::toPCL(req.inputMesh, pclMesh_);
+
+    areaLabels_.resize(req.areaLabels.size());
+
+    for (size_t i = 0; i < req.areaLabels.size(); i++)
+      areaLabels_[i] = req.areaLabels[i];
+
+    return newMapReceived_;
   }
 
   std_msgs::ColorRGBA UIntToColor(uint32_t color)
@@ -566,34 +579,15 @@ struct RecastNode
 
   void run()
   {
-    // load mesh
-    bool loaded_mesh = pcl::io::loadPolygonFileOBJ(path_, pclMesh_);
-    if (loaded_mesh)
+    while (!newMapReceived_)
     {
-      ROS_INFO("loaded OBJ file (%d polygons)", (int)pclMesh_.polygons.size());
-    }
-    else
-    {
-      ROS_ERROR("could not load OBJ file");
-      return;
-    }
-
-    // load triangle labels (a.k.a. area types)
-    std::vector<char> trilabels;
-    bool loaded_areas = recast_ros::loadAreas(pathAreas_, trilabels);
-    if (loaded_areas)
-    {
-      ROS_INFO("loaded AREAS file (%d polygons)", (int)trilabels.size());
-    }
-    else
-    {
-      ROS_WARN("could not load AREAS file... will assume all polygons are of area type 1");
-      int n_tris = pclMesh_.polygons.size();
-      trilabels = std::vector<char>(n_tris, (char)1);
+      ROS_WARN_ONCE("Waiting for map point cloud");
+      ros::spinOnce(); // check changes in ros network
+      loopRate_.sleep();
     }
 
     // build NavMesh
-    if (!recast_.build(pclMesh_, trilabels))
+    if (!recast_.build(pclMesh_, areaLabels_))
     {
       ROS_ERROR("Could not build NavMesh");
       return;
@@ -629,22 +623,15 @@ struct RecastNode
     pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
 
     buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
-    buildOriginalMeshVisualization(orgTriList_, originalLineList_, pclMesh_, pclOriginalCloud, trilabels);
+    buildOriginalMeshVisualization(orgTriList_, originalLineList_, pclMesh_, pclOriginalCloud, areaLabels_);
 
     // infinite loop
     // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Nav Mesh Line List, Index = 3 -> Obstacle List, Index = 4 -> Original Mesh Line List
     std::vector<int> listCount = {0, 0, 0, 0, 0};
 
-    // while (!newMapReceived_)
-    //{
-    //   ROS_WARN_ONCE("Waiting for map point cloud");
-    // ros::spinOnce(); // check changes in ros network
-    //  loopRate_.sleep();
-    //}
-
     while (ros::ok())
     {
-      if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_)
+      if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_ || newMapReceived_)
       {
         // Clear previous Rviz Markers
         triList_.points.clear();
@@ -658,9 +645,9 @@ struct RecastNode
         lineList.clear();
 
         // Update Navigation mesh based on new config
-        if (updateMeshCheck_)
+        if (updateMeshCheck_ || newMapReceived_)
         {
-          if (!updateNavMesh(recast_, pclMesh_, trilabels))
+          if (!updateNavMesh(recast_, pclMesh_, areaLabels_))
             ROS_INFO("Map update failed");
 
           //Clear Obstacles' Markers
@@ -689,6 +676,7 @@ struct RecastNode
         // clear update requirement flag
         updateMeshCheck_ = false;
         obstacleAdded_ = false;
+        newMapReceived_ = false;
       }
 
       // Publish lists
@@ -724,19 +712,13 @@ struct RecastNode
 
       ros::spinOnce(); // check changes in ros network
       loopRate_.sleep();
-
-      if (newMapReceived_)
-      {
-        ROS_WARN_ONCE("New Map is received, building new NavMesh...");
-        newMapReceived_ = false;
-      }
     }
   }
 
   // ros tools
   ros::NodeHandle nodeHandle_;
   ros::Publisher NavMeshPub_;
-   ros::Publisher NavMeshLinesPub_;
+  ros::Publisher NavMeshLinesPub_;
   ros::Publisher OriginalMeshPub_;
   ros::Publisher OriginalMeshLinesPub_;
   ros::Publisher RecastPathPub_;
@@ -749,6 +731,7 @@ struct RecastNode
   ros::ServiceServer serviceAddObstacle_;
   ros::ServiceServer serviceRemoveAllObstacles_;
   ros::ServiceServer serviceProject_;
+  ros::ServiceServer serviceInputMap_;
   std::string path_;
   std::string pathAreas_;
   recast_ros::RecastPlanner recast_;
@@ -770,6 +753,7 @@ struct RecastNode
   const int noAreaTypes_; // Number of Area Types
   bool dynamicReconfigure_;
   std::vector<float> areaCostList_;
+  std::vector<char> areaLabels_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
   bool obstacleRemoved_ = false;

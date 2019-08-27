@@ -14,7 +14,7 @@ Panels:
         - /Marker6
         - /Marker7
         - /Marker8
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.5009041428565979
     Tree Height: 889
   - Class: rviz/Selection
     Name: Selection
@@ -65,44 +65,20 @@ Visualization Manager:
       Marker Topic: /recast_node/navigation_mesh
       Name: Marker
       Namespaces:
-        Nav Mesh Triangles: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/navigation_mesh_lines
+      Name: Marker
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /recast_node/original_mesh
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /recast_node/recast_path_lines
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /recast_node/recast_obstacles
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /recast_node/recast_path_goal
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /recast_node/recast_path_start
       Name: Marker
       Namespaces:
         {}
@@ -118,10 +94,34 @@ Visualization Manager:
       Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /recast_node/navigation_mesh_lines
+      Marker Topic: /recast_node/recast_path_lines
       Name: Marker
       Namespaces:
-        Nav Mesh Lines: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/recast_obstacles
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/recast_path_start
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/recast_path_goal
+      Name: Marker
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
   Enabled: true

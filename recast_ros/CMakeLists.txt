@@ -8,11 +8,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
   pcl_ros
+  pcl_conversions
+  pcl_msgs
   dynamic_reconfigure
   std_msgs
   geometry_msgs
   visualization_msgs
-  pcl_msgs
+  sensor_msgs
   message_generation
 )
 
@@ -116,7 +118,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    DEPENDENCIES
    std_msgs
    geometry_msgs
-#  sensor_msgs
+   sensor_msgs
    pcl_msgs
  )
 
@@ -151,7 +153,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wabian_planner
-  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs
+  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs pcl_conversions pcl_msgs
 #  DEPENDS system_lib
 )
 
@@ -200,7 +202,9 @@ add_executable(test_planning_service_interactive src/nodes/test_planning_service
 target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})
 add_dependencies(test_planning_service_interactive ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-
+add_executable(test_input_map src/nodes/test_input_map.cpp)
+target_link_libraries(test_input_map recast_ros ${catkin_LIBRARIES})
+add_dependencies(test_input_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

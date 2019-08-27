@@ -2,7 +2,6 @@
 #include "recast_ros/RecastPathSrv.h"
 #include <pcl/common/io.h>
 #include <cstdlib>
-#include <iostream>
 
 int main(int argc, char **argv)
 {

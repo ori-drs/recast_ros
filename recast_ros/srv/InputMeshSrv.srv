@@ -1,0 +1,3 @@
+char[] areaLabels
+pcl_msgs/PolygonMesh inputMesh
+---
