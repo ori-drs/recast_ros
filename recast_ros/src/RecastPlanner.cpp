@@ -39,7 +39,9 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   sample->handleMeshChanged(geom.get()); //, areaTypes);
   sample->handleSettings();
   sample->handleBuild(areaTypes);
-  //TODO: retrun false if fail
+  
+  if(!sample)
+    return false;
 
   return true;
 }

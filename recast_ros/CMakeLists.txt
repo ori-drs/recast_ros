@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   visualization_msgs
+  pcl_msgs
   message_generation
 )
 
@@ -96,6 +97,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
+   InputMeshSrv.srv
    RecastPathSrv.srv
    RecastProjectSrv.srv
    AddObstacleSrv.srv
@@ -115,7 +117,7 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    std_msgs
    geometry_msgs
 #  sensor_msgs
-#  pcl_msgs
+   pcl_msgs
  )
 
 ################################################
