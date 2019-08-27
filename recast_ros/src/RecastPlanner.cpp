@@ -11,12 +11,12 @@ using namespace recast_ros;
 
 RecastPlanner::RecastPlanner() : needToRotateMesh(true)
 {
-  stg.cellSize = 0.3f;
-  stg.cellHeight = 0.2f;
-  stg.agentHeight = 2.0f;
-  stg.agentRadius = 0.6f;
-  stg.agentMaxClimb = 0.9f;
-  stg.agentMaxSlope = 45.0f;
+  stg.cellSize = 0.1f;
+  stg.cellHeight = 0.1f;
+  stg.agentHeight = 0.7f;
+  stg.agentRadius = 0.2f;
+  stg.agentMaxClimb = 0.41f;
+  stg.agentMaxSlope = 60.0f;
   stg.regionMinSize = 8;
   stg.regionMergeSize = 20;
   stg.edgeMaxLen = 12.0f;

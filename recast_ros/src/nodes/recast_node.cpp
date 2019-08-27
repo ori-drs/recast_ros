@@ -361,65 +361,72 @@ struct RecastNode
   }
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level) // dynamic reconfiguration, update node parameters and class' private variables
   {
-    ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
-             config.cell_size,
-             config.cell_height,
-             config.agent_height,
-             config.agent_radius,
-             config.agent_max_climb,
-             config.agent_max_slope);
 
-    cellSize_ = config.cell_size;
-    cellHeight_ = config.cell_height;
-    agentHeight_ = config.agent_height;
-    agentRadius_ = config.agent_radius;
-    agentMaxClimb_ = config.agent_max_climb;
-    agentMaxSlope_ = config.agent_max_slope;
-    frequency_ = config.loop_rate;
-    loopRate_ = ros::Rate(frequency_);
+    if (frequency_ == config.loop_rate)
+    {
 
-    /*    if (areaCostList_.size() > 0)
+      ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
+               config.cell_size,
+               config.cell_height,
+               config.agent_height,
+               config.agent_radius,
+               config.agent_max_climb,
+               config.agent_max_slope);
+
+      cellSize_ = config.cell_size;
+      cellHeight_ = config.cell_height;
+      agentHeight_ = config.agent_height;
+      agentRadius_ = config.agent_radius;
+      agentMaxClimb_ = config.agent_max_climb;
+      agentMaxSlope_ = config.agent_max_slope;
+
+      /*    if (areaCostList_.size() > 0)
       areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
-    if (areaCostList_.size() > 1)
-      areaCostList_[1] = config.TERRAIN_TYPE1_COST;
-    if (areaCostList_.size() > 2)
-      areaCostList_[2] = config.TERRAIN_TYPE2_COST;
-    if (areaCostList_.size() > 3)
-      areaCostList_[3] = config.TERRAIN_TYPE3_COST;
-    if (areaCostList_.size() > 4)
-      areaCostList_[4] = config.TERRAIN_TYPE4_COST;
-    if (areaCostList_.size() > 5)
-      areaCostList_[5] = config.TERRAIN_TYPE5_COST;
-    if (areaCostList_.size() > 6)
-      areaCostList_[6] = config.TERRAIN_TYPE6_COST;
-    if (areaCostList_.size() > 7)
-      areaCostList_[7] = config.TERRAIN_TYPE7_COST;
-    if (areaCostList_.size() > 8)
-      areaCostList_[8] = config.TERRAIN_TYPE8_COST;
-    if (areaCostList_.size() > 9)
-      areaCostList_[9] = config.TERRAIN_TYPE9_COST;
-    if (areaCostList_.size() > 10)
-      areaCostList_[10] = config.TERRAIN_TYPE10_COST;
-    if (areaCostList_.size() > 11)
-      areaCostList_[11] = config.TERRAIN_TYPE11_COST;
-    if (areaCostList_.size() > 12)
-      areaCostList_[12] = config.TERRAIN_TYPE12_COST;
-    if (areaCostList_.size() > 13)
-      areaCostList_[13] = config.TERRAIN_TYPE13_COST;
-    if (areaCostList_.size() > 14)
-      areaCostList_[14] = config.TERRAIN_TYPE14_COST;
-    if (areaCostList_.size() > 15)
-      areaCostList_[15] = config.TERRAIN_TYPE15_COST;
-    if (areaCostList_.size() > 16)
-      areaCostList_[16] = config.TERRAIN_TYPE16_COST;
-    if (areaCostList_.size() > 17)
-      areaCostList_[17] = config.TERRAIN_TYPE17_COST;
-    if (areaCostList_.size() > 18)
-      areaCostList_[18] = config.TERRAIN_TYPE18_COST;
-    if (areaCostList_.size() > 19)
-      areaCostList_[19] = config.TERRAIN_TYPE19_COST;
-
-    updateMeshCheck_ = true;
+      if (areaCostList_.size() > 1)
+        areaCostList_[1] = config.TERRAIN_TYPE1_COST;
+      if (areaCostList_.size() > 2)
+        areaCostList_[2] = config.TERRAIN_TYPE2_COST;
+      if (areaCostList_.size() > 3)
+        areaCostList_[3] = config.TERRAIN_TYPE3_COST;
+      if (areaCostList_.size() > 4)
+        areaCostList_[4] = config.TERRAIN_TYPE4_COST;
+      if (areaCostList_.size() > 5)
+        areaCostList_[5] = config.TERRAIN_TYPE5_COST;
+      if (areaCostList_.size() > 6)
+        areaCostList_[6] = config.TERRAIN_TYPE6_COST;
+      if (areaCostList_.size() > 7)
+        areaCostList_[7] = config.TERRAIN_TYPE7_COST;
+      if (areaCostList_.size() > 8)
+        areaCostList_[8] = config.TERRAIN_TYPE8_COST;
+      if (areaCostList_.size() > 9)
+        areaCostList_[9] = config.TERRAIN_TYPE9_COST;
+      if (areaCostList_.size() > 10)
+        areaCostList_[10] = config.TERRAIN_TYPE10_COST;
+      if (areaCostList_.size() > 11)
+        areaCostList_[11] = config.TERRAIN_TYPE11_COST;
+      if (areaCostList_.size() > 12)
+        areaCostList_[12] = config.TERRAIN_TYPE12_COST;
+      if (areaCostList_.size() > 13)
+        areaCostList_[13] = config.TERRAIN_TYPE13_COST;
+      if (areaCostList_.size() > 14)
+        areaCostList_[14] = config.TERRAIN_TYPE14_COST;
+      if (areaCostList_.size() > 15)
+        areaCostList_[15] = config.TERRAIN_TYPE15_COST;
+      if (areaCostList_.size() > 16)
+        areaCostList_[16] = config.TERRAIN_TYPE16_COST;
+      if (areaCostList_.size() > 17)
+        areaCostList_[17] = config.TERRAIN_TYPE17_COST;
+      if (areaCostList_.size() > 18)
+        areaCostList_[18] = config.TERRAIN_TYPE18_COST;
+      if (areaCostList_.size() > 19)
+        areaCostList_[19] = config.TERRAIN_TYPE19_COST;
+      updateMeshCheck_ = true;
+    }
+    else
+    {
+      frequency_ = config.loop_rate;
+      loopRate_ = ros::Rate(frequency_);
+    }
   }
 
   bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
