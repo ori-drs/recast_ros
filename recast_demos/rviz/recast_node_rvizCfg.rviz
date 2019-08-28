@@ -14,6 +14,7 @@ Panels:
         - /Marker6
         - /Marker7
         - /Marker8
+        - /Marker9
       Splitter Ratio: 0.5009041428565979
     Tree Height: 889
   - Class: rviz/Selection
@@ -61,11 +62,19 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /recast_node/navigation_mesh
       Name: Marker
       Namespaces:
         {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/filtered_navigation_mesh
+      Name: Marker
+      Namespaces:
+        Nav Mesh Triangles: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -73,7 +82,7 @@ Visualization Manager:
       Marker Topic: /recast_node/navigation_mesh_lines
       Name: Marker
       Namespaces:
-        {}
+        Nav Mesh Lines: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -152,25 +161,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 116.908203125
+      Distance: 47.77753829956055
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.31700021028518677
-        Y: 15.64929485321045
-        Z: -15.315119743347168
+        X: 5.463100433349609
+        Y: 20.528690338134766
+        Z: -8.445055961608887
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2253985404968262
+      Pitch: 1.544796347618103
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.3003983497619629
+      Yaw: 0.020393528044223785
     Saved: ~
 Window Geometry:
   Displays:

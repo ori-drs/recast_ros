@@ -8,14 +8,10 @@
   <node name="rqt_gui" pkg="rqt_reconfigure" type="rqt_reconfigure"/>
   <!-- load and publish fsc map -->
   <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
-  	<param name="path" value="$(find recast_demos)/data/gridmap_fsc_res5cm.obj" />
-  	<param name="path_areas" value="$(find recast_demos)/data/gridmap_fsc_res5cm.dat" />
-  	<param name="start_x" value="0.0" />
-  	<param name="start_y" value="0.0" />
-  	<param name="start_z" value="0.0" />
-  	<param name="goal_x" value="14.0" />
-  	<param name="goal_y" value="16.0" />
-  	<param name="goal_z" value="0.0" />
+
+    <param name="referenceX" value="14.0f" />
+    <param name="referenceY" value="16.0f" />
+    <param name="referenceZ" value="-1.16f" />
     <param name="cell_size" value="0.1f" />
     <param name="cell_height" value="0.1f" />
     <param name="agent_height" value="0.7f" />

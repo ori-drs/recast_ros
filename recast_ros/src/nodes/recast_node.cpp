@@ -26,16 +26,7 @@ struct RecastNode
       : nodeHandle_(nodeHandle), noAreaTypes_(20), areaCostList_(noAreaTypes_), colourList_(noAreaTypes_), loopRate_(100.0)
   {
     // ros params
-    std::string base = ros::package::getPath("recast_demos");
     std::string temp = "TERRAIN_TYPE", temp1 = "";
-    nodeHandle_.param("path", path_, base + std::string("/data/map.obj"));
-    nodeHandle_.param("path_areas", pathAreas_, base + std::string("/data/map.dat"));
-    nodeHandle_.param("start_x", startX_, 0.0);
-    nodeHandle_.param("start_y", startY_, 0.0);
-    nodeHandle_.param("start_z", startZ_, 0.0);
-    nodeHandle_.param("goal_x", goalX_, 0.0);
-    nodeHandle_.param("goal_y", goalY_, 0.0);
-    nodeHandle_.param("goal_z", goalZ_, 0.0);
     nodeHandle_.param("cell_size", cellSize_, 0.1f);
     nodeHandle_.param("cell_height", cellHeight_, 0.1f);
     nodeHandle_.param("agent_height", agentHeight_, 0.7f);
@@ -45,8 +36,14 @@ struct RecastNode
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
 
+    //get reference point of the map
+    nodeHandle_.getParam("referenceX", reference_.x);
+    nodeHandle_.getParam("referenceY", reference_.y);
+    nodeHandle_.getParam("referenceZ", reference_.z);
+
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
+    NavMeshFilteredPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("filtered_navigation_mesh", 1);
     NavMeshLinesPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh_lines", 1);
     OriginalMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("original_mesh", 1);
     OriginalMeshLinesPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("original_mesh_lines", 1);
@@ -110,12 +107,12 @@ struct RecastNode
 
     ROS_WARN("New Map is received, building new NavMesh...");
 
-    pcl_conversions::toPCL(req.inputMesh, pclMesh_);
+    pcl_conversions::toPCL(req.input_mesh, pclMesh_);
 
-    areaLabels_.resize(req.areaLabels.size());
+    areaLabels_.resize(req.area_labels.size());
 
-    for (size_t i = 0; i < req.areaLabels.size(); i++)
-      areaLabels_[i] = req.areaLabels[i];
+    for (size_t i = 0; i < req.area_labels.size(); i++)
+      areaLabels_[i] = req.area_labels[i];
 
     return newMapReceived_;
   }
@@ -248,7 +245,7 @@ struct RecastNode
     ROS_INFO("NavMesh is updated");
     return true;
   }
-  void buildOriginalMeshVisualization(visualization_msgs::Marker &orgTriList, visualization_msgs::Marker &originalLineList, const pcl::PolygonMesh &pclMesh, pcl::PointCloud<pcl::PointXYZ>::Ptr pclCloud, const std::vector<char> &trilabels)
+  void buildOriginalMeshVisualization(const pcl::PolygonMesh &pclMesh, pcl::PointCloud<pcl::PointXYZ>::Ptr pclCloud, const std::vector<char> &trilabels)
   {
     geometry_msgs::Point p;
     std_msgs::ColorRGBA c;
@@ -264,8 +261,8 @@ struct RecastNode
     orgTriList_.colors.resize(3 * npoly);
     orgTriList_.points.resize(3 * npoly);
 
-    originalLineList.colors.resize(6 * npoly, c);
-    originalLineList.points.resize(6 * npoly);
+    originalLineList_.colors.resize(6 * npoly, c);
+    originalLineList_.points.resize(6 * npoly);
 
     for (int i = 0; i < npoly; i++)
     {
@@ -280,27 +277,33 @@ struct RecastNode
         orgTriList_.colors[3 * i + j] = colourList_[trilabels[i]];
         orgTriList_.points[3 * i + j] = p;
       }
-      originalLineList.points[6 * i + 0] = orgTriList_.points[3 * i + 0];
-      originalLineList.points[6 * i + 1] = orgTriList_.points[3 * i + 1];
-      originalLineList.points[6 * i + 2] = orgTriList_.points[3 * i + 1];
-      originalLineList.points[6 * i + 3] = orgTriList_.points[3 * i + 2];
-      originalLineList.points[6 * i + 4] = orgTriList_.points[3 * i + 0];
-      originalLineList.points[6 * i + 5] = orgTriList_.points[3 * i + 2];
+      originalLineList_.points[6 * i + 0] = orgTriList_.points[3 * i + 0];
+      originalLineList_.points[6 * i + 1] = orgTriList_.points[3 * i + 1];
+      originalLineList_.points[6 * i + 2] = orgTriList_.points[3 * i + 1];
+      originalLineList_.points[6 * i + 3] = orgTriList_.points[3 * i + 2];
+      originalLineList_.points[6 * i + 4] = orgTriList_.points[3 * i + 0];
+      originalLineList_.points[6 * i + 5] = orgTriList_.points[3 * i + 2];
     }
 
     ROS_INFO("Original Mesh is built\n");
   }
 
-  // Create RViz Markers based on Nav Mesh
-  void buildNavMeshVisualization(visualization_msgs::Marker &triList, visualization_msgs::Marker &lineMarkerList,
-                                 const pcl::PointCloud<pcl::PointXYZ> &polyVerts,
+  // Create RViz Markers based on NavMesh
+  void buildNavMeshVisualization(const pcl::PointCloud<pcl::PointXYZ> &polyVerts,
                                  const std::vector<Eigen::Vector3d> &lineList, const std::vector<unsigned char> &areaList)
   {
 
     ROS_INFO("NavMesh Visualization is built\n");
     geometry_msgs::Point p;
+    std::vector<pcl::PointXYZ> path;
+    pcl::PointXYZ centre;
+    std::vector<geometry_msgs::Point> triPoints;
+    triPoints.reserve(3);
     std_msgs::ColorRGBA c;
     c.a = 1.0; // Set Alpha to 1 for visibility
+    centre.x = 0;
+    centre.y = 0;
+    centre.z = 0;
 
     lineMarkerList_.colors.resize(lineList.size());
     lineMarkerList_.points.resize(lineList.size());
@@ -319,16 +322,51 @@ struct RecastNode
       lineMarkerList_.points[i] = p;
     }
 
-    triList_.colors.resize(polyVerts.size());
-    triList_.points.resize(polyVerts.size());
+    navMesh_.colors.resize(polyVerts.size());
+    navMesh_.points.resize(polyVerts.size());
+
+    navMeshFiltered_.colors.resize(polyVerts.size());
+    navMeshFiltered_.points.resize(polyVerts.size());
+    int index = 0;
+
     for (int i = 0; i < polyVerts.size(); i++)
     {
       p.x = polyVerts.at(i).x;
       p.y = polyVerts.at(i).y;
       p.z = polyVerts.at(i).z;
 
-      triList_.colors[i] = colourList_[areaList.at(i)];
-      triList_.points[i] = p;
+      navMesh_.colors[i] = colourList_[areaList.at(i)];
+      navMesh_.points[i] = p;
+
+      if (i % 3 != 0 || i == 0)
+      {
+        centre.x += p.x;
+        centre.y += p.y;
+        centre.z += p.z;
+      }
+      else
+      {
+        centre.x = centre.x / 3.0;
+        centre.y = centre.y / 3.0;
+        centre.z = centre.z / 3.0;
+
+        if (recast_.query(reference_, centre, path, areaCostList_, noAreaTypes_))
+        {
+          navMeshFiltered_.colors[index] = navMesh_.colors[i - 3];
+          navMeshFiltered_.points[index] = navMesh_.points[i - 3];
+
+          navMeshFiltered_.colors[index + 1] = navMesh_.colors[i - 2];
+          navMeshFiltered_.points[index + 1] = navMesh_.points[i - 2];
+
+          navMeshFiltered_.colors[index + 2] = navMesh_.colors[i - 1];
+          navMeshFiltered_.points[index + 2] = navMesh_.points[i - 1];
+
+          index += 3;
+        }
+        centre.x = p.x;
+        centre.y = p.y;
+        centre.z = p.z;
+      }
     }
   }
   bool addObstacleService(recast_ros::AddObstacleSrv::Request &req, recast_ros::AddObstacleSrv::Response &res)
@@ -433,6 +471,12 @@ struct RecastNode
   {
     ros::WallTime startFunc, endFunc, pathStart, pathEnd;
     startFunc = ros::WallTime::now();
+    //Set visual default visual parameters
+    geometry_msgs::Point p;
+    std_msgs::ColorRGBA c;
+    setVisualParameters(pathList_, visualization_msgs::Marker::LINE_LIST, "Path Lines", 0);
+    setVisualParameters(agentStartPos_, visualization_msgs::Marker::SPHERE, "Agent Start Position", 1);
+    setVisualParameters(agentGoalPos_, visualization_msgs::Marker::SPHERE, "Agent Goal Position", 10);
     //Get Input
     ROS_INFO("Input positions are;");
     startX_ = req.startXYZ.x;
@@ -445,14 +489,34 @@ struct RecastNode
     ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
     // test path planning (Detour)
     std::vector<pcl::PointXYZ> path;
-    pcl::PointXYZ start;
+    pcl::PointXYZ start, goal;
     start.x = startX_;
     start.y = startY_;
     start.z = startZ_;
-    pcl::PointXYZ goal;
+
     goal.x = goalX_;
     goal.y = goalY_;
     goal.z = goalZ_;
+
+    //Add markers for Start & Goal Position
+    agentStartPos_.pose.position.x = startX_;
+    agentStartPos_.pose.position.y = startY_;
+    agentStartPos_.pose.position.z = startZ_ + agentHeight_;
+    agentStartPos_.color.a = 0.6;
+    agentStartPos_.color.r = 0.0;
+    agentStartPos_.color.g = 1.0;
+    agentStartPos_.color.b = 0.0;
+
+    agentGoalPos_.pose.position.x = goalX_;
+    agentGoalPos_.pose.position.y = goalY_;
+    agentGoalPos_.pose.position.z = goalZ_ + agentHeight_;
+    agentGoalPos_.color.a = 0.6;
+    agentGoalPos_.color.r = 1.0;
+    agentGoalPos_.color.g = 0.0;
+    agentGoalPos_.color.b = 0.0;
+
+    RecastPathStartPub_.publish(agentStartPos_);
+    RecastPathGoalPub_.publish(agentGoalPos_);
 
     // query recast/detour for the path
     // TODO: this function should not use pcl as arguments but, std::vector or Eigen...
@@ -490,17 +554,9 @@ struct RecastNode
       res.path[i].z = path[i].z;
     }
 
-    visualization_msgs::Marker startPos, goalPos;
-
     //Last Path Visualization
-    setVisualParameters(pathList_, visualization_msgs::Marker::LINE_LIST, "Path Lines", 0);
-    setVisualParameters(agentStartPos_, visualization_msgs::Marker::SPHERE, "Agent Start Position", 1);
-    setVisualParameters(agentGoalPos_, visualization_msgs::Marker::SPHERE, "Agent Goal Position", 10);
 
-    geometry_msgs::Point p;
-    std_msgs::ColorRGBA c;
-    // Set Alpha to 1 for visibility
-    c.a = 1.0;
+    c.a = 1.0; // Set Alpha to 1 for visibility
     c.r = 1.0;
     c.b = 0;
     c.g = 1.0;
@@ -513,16 +569,9 @@ struct RecastNode
     p.x = path[0].x;
     p.y = path[0].y;
     p.z = path[0].z + agentHeight_;
-    agentStartPos_.pose.position.x = path[0].x;
-    agentStartPos_.pose.position.y = path[0].y;
-    agentStartPos_.pose.position.z = path[0].z + agentHeight_;
 
     pathList_.scale.x = 0.1;
     pathList_.points[0] = p;
-    agentStartPos_.color.a = 0.6;
-    agentStartPos_.color.r = 0.0;
-    agentStartPos_.color.g = 1.0;
-    agentStartPos_.color.b = 0.0;
 
     int j = 1;
     for (size_t i = 1; i < path.size() - 1; i++)
@@ -541,17 +590,7 @@ struct RecastNode
     p.z = path[path.size() - 1].z + agentHeight_;
     pathList_.points[pathList_.points.size() - 1] = p;
 
-    agentGoalPos_.pose.position.x = path[path.size() - 1].x;
-    agentGoalPos_.pose.position.y = path[path.size() - 1].y;
-    agentGoalPos_.pose.position.z = path[path.size() - 1].z + agentHeight_;
-    agentGoalPos_.color.a = 0.6;
-    agentGoalPos_.color.r = 1.0;
-    agentGoalPos_.color.g = 0.0;
-    agentGoalPos_.color.b = 0.0;
-
     RecastPathPub_.publish(pathList_);
-    RecastPathStartPub_.publish(agentStartPos_);
-    RecastPathGoalPub_.publish(agentGoalPos_);
 
     endFunc = ros::WallTime::now();
 
@@ -619,9 +658,10 @@ struct RecastNode
 
     // Visualization
 
-    setVisualParameters(triList_, visualization_msgs::Marker::TRIANGLE_LIST, "Nav Mesh Triangles", 2);
+    setVisualParameters(navMesh_, visualization_msgs::Marker::TRIANGLE_LIST, "NavMesh Triangles", 2);
+    setVisualParameters(navMeshFiltered_, visualization_msgs::Marker::TRIANGLE_LIST, "Filtered NavMesh Triangles", 12);
     setVisualParameters(orgTriList_, visualization_msgs::Marker::TRIANGLE_LIST, "Original Mesh Triangles", 3);
-    setVisualParameters(lineMarkerList_, visualization_msgs::Marker::LINE_LIST, "Nav Mesh Lines", 4);
+    setVisualParameters(lineMarkerList_, visualization_msgs::Marker::LINE_LIST, "NavMesh Lines", 4);
     setVisualParameters(originalLineList_, visualization_msgs::Marker::LINE_LIST, "Original Mesh Lines", 8);
 
     pcl::PointCloud<pcl::PointXYZ> polyVerts, triVerts;
@@ -629,20 +669,21 @@ struct RecastNode
     pcl::fromPCLPointCloud2(pclMesh_.cloud, triVerts);
     pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
 
-    buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
-    buildOriginalMeshVisualization(orgTriList_, originalLineList_, pclMesh_, pclOriginalCloud, areaLabels_);
+    buildNavMeshVisualization(polyVerts, lineList, areaList);
+    buildOriginalMeshVisualization(pclMesh_, pclOriginalCloud, areaLabels_);
 
     // infinite loop
-    // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> Nav Mesh Line List, Index = 3 -> Obstacle List, Index = 4 -> Original Mesh Line List
-    std::vector<int> listCount = {0, 0, 0, 0, 0};
+    // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> NavMesh Line List, Index = 3 -> Obstacle List, Index = 4 -> Original Mesh Line List
+    // Index = 5 -> Filtered NavMesh Line List
+    std::vector<int> listCount = {0, 0, 0, 0, 0, 0};
 
     while (ros::ok())
     {
       if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_ || newMapReceived_)
       {
         // Clear previous Rviz Markers
-        triList_.points.clear();
-        triList_.colors.clear();
+        navMesh_.points.clear();
+        navMesh_.colors.clear();
 
         lineMarkerList_.points.clear();
         lineMarkerList_.colors.clear();
@@ -678,7 +719,7 @@ struct RecastNode
 
         pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
         // Create Rviz Markers based on new navigation mesh
-        buildNavMeshVisualization(triList_, lineMarkerList_, polyVerts, lineList, areaList);
+        buildNavMeshVisualization(polyVerts, lineList, areaList);
 
         // clear update requirement flag
         updateMeshCheck_ = false;
@@ -690,7 +731,12 @@ struct RecastNode
       if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
       {
         ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
-        NavMeshPub_.publish(triList_);
+        NavMeshPub_.publish(navMesh_);
+      }
+      if (NavMeshFilteredPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+      {
+        ROS_INFO("Published Filtered Navigation Mesh Triangle List No %d", listCount[5]++);
+        NavMeshFilteredPub_.publish(navMeshFiltered_);
       }
       if (NavMeshLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
       {
@@ -725,6 +771,7 @@ struct RecastNode
   // ros tools
   ros::NodeHandle nodeHandle_;
   ros::Publisher NavMeshPub_;
+  ros::Publisher NavMeshFilteredPub_;
   ros::Publisher NavMeshLinesPub_;
   ros::Publisher OriginalMeshPub_;
   ros::Publisher OriginalMeshLinesPub_;
@@ -739,11 +786,10 @@ struct RecastNode
   ros::ServiceServer serviceRemoveAllObstacles_;
   ros::ServiceServer serviceProject_;
   ros::ServiceServer serviceInputMap_;
-  std::string path_;
-  std::string pathAreas_;
   recast_ros::RecastPlanner recast_;
   pcl::PolygonMesh pclMesh_;
   // path planner settings
+  pcl::PointXYZ reference_;
   double startX_;
   double startY_;
   double startZ_;
@@ -766,7 +812,8 @@ struct RecastNode
   bool obstacleRemoved_ = false;
   bool newMapReceived_ = false;
   //Visualization settings
-  visualization_msgs::Marker triList_;
+  visualization_msgs::Marker navMesh_;
+  visualization_msgs::Marker navMeshFiltered_;
   visualization_msgs::Marker lineMarkerList_;
   visualization_msgs::Marker orgTriList_;
   visualization_msgs::Marker originalLineList_;

@@ -8,16 +8,14 @@
 #include <ros/package.h>
 #include <vector>
 
-
 class InputMap
 {
 public:
     InputMap(ros::NodeHandle &node_handle) : node_handle_(node_handle)
     {
         // ros params
-        std::string base = ros::package::getPath("recast_demos");
-        node_handle_.param("path", path_, base + std::string("/data/map.obj"));
-        node_handle_.param("path_areas", pathAreas_, base + std::string("/data/map.dat"));
+        node_handle_.getParam("path", path_);
+        node_handle_.getParam("path_areas", path_areas_);
         node_handle_.param("path_service", path_service_, std::string("/recast_node/input_mesh"));
     }
     void run()
@@ -26,12 +24,18 @@ public:
         ros::ServiceClient client_recast = node_handle_.serviceClient<recast_ros::InputMeshSrv>(path_service_);
         recast_ros::InputMeshSrv srv;
 
+        if (path_ == "")
+        {
+            ROS_ERROR("Couldn't find a valid map, check the launch file. Aborting...");
+            return;
+        }
+
         // load mesh
         bool loaded_mesh = pcl::io::loadPolygonFileOBJ(path_, pclMesh);
         if (loaded_mesh)
         {
             ROS_INFO("loaded OBJ file (%d polygons)", (int)pclMesh.polygons.size());
-            pcl_conversions::fromPCL(pclMesh, srv.request.inputMesh);
+            pcl_conversions::fromPCL(pclMesh, srv.request.input_mesh);
         }
         else
         {
@@ -41,26 +45,26 @@ public:
 
         // load triangle labels (a.k.a. area types)
         std::vector<char> trilabels;
-        bool loaded_areas = recast_ros::loadAreas(pathAreas_, trilabels);
+        bool loaded_areas = recast_ros::loadAreas(path_areas_, trilabels);
         if (loaded_areas)
         {
             ROS_INFO("loaded AREAS file (%d polygons)", (int)trilabels.size());
-            srv.request.areaLabels.resize(trilabels.size());
+            srv.request.area_labels.resize(trilabels.size());
             for (size_t i = 0; i < trilabels.size(); i++)
-                srv.request.areaLabels[i] = trilabels[i];
+                srv.request.area_labels[i] = trilabels[i];
         }
         else
         {
             ROS_WARN("could not load AREAS file... will assume all polygons are of area type 1");
             int n_tris = pclMesh.polygons.size();
-             srv.request.areaLabels.resize(n_tris);
+            srv.request.area_labels.resize(n_tris);
             for (size_t i = 0; i < n_tris; i++)
-                srv.request.areaLabels[i] = 1;
+                srv.request.area_labels[i] = 1;
         }
 
         if (client_recast.call(srv))
         {
-            ROS_INFO("Map is sent");
+            ROS_INFO("Map was sent");
         }
         else
         {
@@ -73,7 +77,7 @@ protected:
     ros::NodeHandle node_handle_;
     std::string path_service_;
     std::string path_;
-    std::string pathAreas_;
+    std::string path_areas_;
     pcl::PolygonMesh pclMesh;
 };
 
