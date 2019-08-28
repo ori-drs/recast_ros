@@ -17,12 +17,21 @@ public:
         node_handle_.getParam("path", path_);
         node_handle_.getParam("path_areas", path_areas_);
         node_handle_.param("path_service", path_service_, std::string("/recast_node/input_mesh"));
+
+        //get reference point of the map
+        node_handle_.getParam("reference_point_x", reference_point_.x);
+        node_handle_.getParam("reference_point_y", reference_point_.y);
+        node_handle_.getParam("reference_point_z", reference_point_.z);
     }
     void run()
     {
         // ros
         ros::ServiceClient client_recast = node_handle_.serviceClient<recast_ros::InputMeshSrv>(path_service_);
         recast_ros::InputMeshSrv srv;
+
+        srv.request.reference_point.x = reference_point_.x;
+        srv.request.reference_point.y = reference_point_.y;
+        srv.request.reference_point.z = reference_point_.z;
 
         if (path_ == "")
         {
@@ -79,6 +88,7 @@ protected:
     std::string path_;
     std::string path_areas_;
     pcl::PolygonMesh pclMesh;
+    pcl::PointXYZ reference_point_;
 };
 
 int main(int argc, char *argv[])

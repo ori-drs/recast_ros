@@ -15,6 +15,7 @@ Panels:
         - /Marker7
         - /Marker8
         - /Marker9
+        - /Marker10
       Splitter Ratio: 0.5009041428565979
     Tree Height: 889
   - Class: rviz/Selection
@@ -70,19 +71,27 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /recast_node/navigation_mesh_lines
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
       Enabled: true
       Marker Topic: /recast_node/filtered_navigation_mesh
       Name: Marker
       Namespaces:
-        Nav Mesh Triangles: true
+        Filtered NavMesh Triangles: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /recast_node/navigation_mesh_lines
+      Marker Topic: /recast_node/filtered_navigation_mesh_lines
       Name: Marker
       Namespaces:
-        Nav Mesh Lines: true
+        Filtered NavMesh  Lines: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -176,10 +185,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.544796347618103
+      Pitch: 1.2147966623306274
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.020393528044223785
+      Yaw: 0.3053895831108093
     Saved: ~
 Window Geometry:
   Displays:

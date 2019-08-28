@@ -9,9 +9,6 @@
   <!-- load and publish fsc map -->
   <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
 
-    <param name="referenceX" value="14.0f" />
-    <param name="referenceY" value="16.0f" />
-    <param name="referenceZ" value="-1.16f" />
     <param name="cell_size" value="0.1f" />
     <param name="cell_height" value="0.1f" />
     <param name="agent_height" value="0.7f" />
