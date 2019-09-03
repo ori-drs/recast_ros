@@ -35,6 +35,7 @@ struct RecastNode
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0);
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
+    nodeHandle_.param("rviz_marker_loop_rate", rvizFrequency_, 10);
 
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
@@ -95,6 +96,9 @@ struct RecastNode
     recast_.stg.agentRadius = agentRadius_;
     recast_.stg.agentMaxClimb = agentMaxClimb_;
     recast_.stg.agentMaxSlope = agentMaxSlope_;
+
+    //publishing ratio
+    int publishRate_ = frequency_ / rvizFrequency_;
   }
 
   bool inputMeshService(recast_ros::InputMeshSrv::Request &req, recast_ros::InputMeshSrv::Response &res)
@@ -413,11 +417,11 @@ struct RecastNode
   {
 
     if (cellSize_ != config.cell_size ||
-      cellHeight_ != config.cell_height ||
-      agentHeight_ != config.agent_height ||
-      agentRadius_ != config.agent_radius ||
-      agentMaxClimb_ != config.agent_max_climb ||
-      agentMaxSlope_ != config.agent_max_slope)
+        cellHeight_ != config.cell_height ||
+        agentHeight_ != config.agent_height ||
+        agentRadius_ != config.agent_radius ||
+        agentMaxClimb_ != config.agent_max_climb ||
+        agentMaxSlope_ != config.agent_max_slope)
     {
 
       ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
@@ -439,7 +443,6 @@ struct RecastNode
     }
     else
     {
-
       /*    if (areaCostList_.size() > 0)
       areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
       if (areaCostList_.size() > 1)
@@ -482,6 +485,9 @@ struct RecastNode
         areaCostList_[19] = config.TERRAIN_TYPE19_COST;
 
       frequency_ = config.loop_rate;
+      rvizFrequency_ = config.rviz_marker_loop_rate;
+      publishRate_ = frequency_ / rvizFrequency_;
+
       loopRate_ = ros::Rate(frequency_);
     }
   }
@@ -690,6 +696,7 @@ struct RecastNode
     // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> NavMesh Line List, Index = 3 -> Obstacle List, Index = 4 -> Original Mesh Line List
     // Index = 5 -> Filtered NavMesh Triangle List, Index = 6 -> Filtered NavMesh Line List
     std::vector<int> listCount = {0, 0, 0, 0, 0, 0};
+    int loopCount = 0;
 
     while (ros::ok())
     {
@@ -743,52 +750,58 @@ struct RecastNode
         updateMeshCheck_ = false;
         obstacleAdded_ = false;
         newMapReceived_ = false;
+        loopCount = 0;
       }
 
-      // Publish lists
-      if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+      if (loopCount % publishRate_ == 0)
       {
-        ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
-        NavMeshPub_.publish(navMesh_);
-      }
-      if (NavMeshFilteredPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
-      {
-        ROS_INFO("Published Filtered Navigation Mesh Triangle List No %d", listCount[5]++);
-        NavMeshFilteredPub_.publish(navMeshFiltered_);
-      }
-      if (NavMeshLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
-      {
-        ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
-        NavMeshLinesPub_.publish(navMeshLineList_);
-      }
+        // Publish lists
+        if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+        {
+          ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
+          NavMeshPub_.publish(navMesh_);
+        }
+        if (NavMeshFilteredPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+        {
+          ROS_INFO("Published Filtered Navigation Mesh Triangle List No %d", listCount[5]++);
+          NavMeshFilteredPub_.publish(navMeshFiltered_);
+        }
+        if (NavMeshLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+        {
+          ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
+          NavMeshLinesPub_.publish(navMeshLineList_);
+        }
 
-      if (NavMeshFilteredLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
-      {
-        ROS_INFO("Published Navigation Filtered Mesh Line List No %d", listCount[6]++);
-        NavMeshFilteredLinesPub_.publish(navMeshLineListFiltered_);
-      }
+        if (NavMeshFilteredLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
+        {
+          ROS_INFO("Published Navigation Filtered Mesh Line List No %d", listCount[6]++);
+          NavMeshFilteredLinesPub_.publish(navMeshLineListFiltered_);
+        }
 
-      if (OriginalMeshPub_.getNumSubscribers() >= 1)
-      {
-        ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]++);
-        OriginalMeshPub_.publish(orgTriList_);
-      }
+        if (OriginalMeshPub_.getNumSubscribers() >= 1)
+        {
+          ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]++);
+          OriginalMeshPub_.publish(orgTriList_);
+        }
 
-      if (OriginalMeshLinesPub_.getNumSubscribers() >= 1)
-      {
-        ROS_INFO("Published Original Mesh Line List No %d", listCount[4]++);
-        OriginalMeshLinesPub_.publish(originalLineList_);
-      }
+        if (OriginalMeshLinesPub_.getNumSubscribers() >= 1)
+        {
+          ROS_INFO("Published Original Mesh Line List No %d", listCount[4]++);
+          OriginalMeshLinesPub_.publish(originalLineList_);
+        }
 
-      if (RecastObstaclePub_.getNumSubscribers() >= 1)
-      {
-        ROS_INFO("Published obstacles No %d", listCount[3]++);
-        for (size_t i = 0; i < obstacleList_.size(); i++)
-          RecastObstaclePub_.publish(obstacleList_[i]);
+        if (RecastObstaclePub_.getNumSubscribers() >= 1)
+        {
+          ROS_INFO("Published obstacles No %d", listCount[3]++);
+          for (size_t i = 0; i < obstacleList_.size(); i++)
+            RecastObstaclePub_.publish(obstacleList_[i]);
+        }
+        loopCount = 0;
       }
 
       ros::spinOnce(); // check changes in ros network
       loopRate_.sleep();
+      loopCount++;
     }
   }
 
@@ -806,6 +819,8 @@ struct RecastNode
   ros::Publisher RecastPathGoalPub_;
   ros::Rate loopRate_;
   double frequency_ = 100.0;
+  int rvizFrequency_ = 10;
+  int publishRate_ = 10; // ratio between frequency and rvizFrequency
   ros::ServiceServer servicePlan_;
   ros::ServiceServer serviceAddObstacle_;
   ros::ServiceServer serviceRemoveAllObstacles_;
