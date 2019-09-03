@@ -27,12 +27,12 @@ struct RecastNode
   {
     // ros params
     std::string temp = "TERRAIN_TYPE", temp1 = "";
-    nodeHandle_.param("cell_size", cellSize_, 0.1f);
-    nodeHandle_.param("cell_height", cellHeight_, 0.1f);
-    nodeHandle_.param("agent_height", agentHeight_, 0.7f);
-    nodeHandle_.param("agent_radius", agentRadius_, 0.2f);
-    nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41f);
-    nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0f);
+    nodeHandle_.param("cell_size", cellSize_, 0.1);
+    nodeHandle_.param("cell_height", cellHeight_, 0.1);
+    nodeHandle_.param("agent_height", agentHeight_, 0.7);
+    nodeHandle_.param("agent_radius", agentRadius_, 0.2);
+    nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41);
+    nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0);
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
 
@@ -235,8 +235,6 @@ struct RecastNode
     recast_.stg.agentMaxClimb = agentMaxClimb_;
     recast_.stg.agentMaxSlope = agentMaxSlope_;
 
-    ROS_INFO("%f \t %f \t %f\t %f\t %f\t %f", cellSize_, cellHeight_, agentHeight_, agentRadius_, agentMaxClimb_, agentMaxSlope_);
-
     if (!recast_.build(pclMesh, trilabels))
     {
       ROS_ERROR("Could not build NavMesh");
@@ -289,8 +287,7 @@ struct RecastNode
   }
 
   // Create RViz Markers based on NavMesh
-  void buildNavMeshVisualization(const pcl::PointCloud<pcl::PointXYZ> &polyVerts,
-                                 const std::vector<Eigen::Vector3d> &lineList, const std::vector<unsigned char> &areaList)
+  void buildNavMeshVisualization(const pcl::PolygonMesh::Ptr &pclMesh, pcl::PointCloud<pcl::PointXYZ>::Ptr pclCloud, const std::vector<unsigned char> &trilabels)
   {
 
     ROS_INFO("NavMesh Visualization is built\n");
@@ -308,75 +305,80 @@ struct RecastNode
     centre.y = 0;
     centre.z = 0;
 
-    navMeshLineList_.colors.resize(lineList.size(), c);
-    navMeshLineList_.points.resize(lineList.size());
+    pcl::fromPCLPointCloud2(pclMesh->cloud, *pclCloud);
+    int npoly = pclMesh->polygons.size();
 
-    navMeshLineListFiltered_.colors.resize(lineList.size(), c);
-    navMeshLineListFiltered_.points.resize(lineList.size());
+    int id = 0;
 
-    for (size_t i = 0; i < lineList.size(); i++)
-    {
-      p.x = lineList[i][0];
-      p.y = lineList[i][1];
-      p.z = lineList[i][2];
+    navMeshLineList_.colors.resize(6 * npoly, c);
+    navMeshLineList_.points.resize(6 * npoly);
 
-      navMeshLineList_.points[i] = p;
-    }
+    navMeshLineListFiltered_.colors.resize(6 * npoly, c);
+    navMeshLineListFiltered_.points.resize(6 * npoly);
 
-    navMesh_.colors.resize(polyVerts.size());
-    navMesh_.points.resize(polyVerts.size());
+    navMesh_.colors.resize(3 * npoly);
+    navMesh_.points.resize(3 * npoly);
 
-    navMeshFiltered_.colors.resize(polyVerts.size());
-    navMeshFiltered_.points.resize(polyVerts.size());
+    navMeshFiltered_.colors.resize(3 * npoly);
+    navMeshFiltered_.points.resize(3 * npoly);
     int index = 0;
     int lineIndex = 0;
 
-    for (int i = 0; i < polyVerts.size(); i++)
+    for (int i = 0; i < npoly; i++)
     {
-      p.x = polyVerts.at(i).x;
-      p.y = polyVerts.at(i).y;
-      p.z = polyVerts.at(i).z;
-
-      navMesh_.colors[i] = colourList_[areaList.at(i)];
-      navMesh_.points[i] = p;
-
-      if (i % 3 != 0 || i == 0)
+      for (int j = 0; j < 3; j++)
       {
+        id = pclMesh->polygons[i].vertices[j];
+
+        p.x = pclCloud->points[id].x;
+        p.y = pclCloud->points[id].y;
+        p.z = pclCloud->points[id].z;
+
+        navMesh_.colors[3 * i + j] = colourList_[trilabels[id]];
+        navMesh_.points[3 * i + j] = p;
+
         centre.x += p.x;
         centre.y += p.y;
         centre.z += p.z;
-      }
-      else
-      {
-        centre.x = centre.x / 3.0;
-        centre.y = centre.y / 3.0;
-        centre.z = centre.z / 3.0;
 
-        if (recast_.query(reference_point_, centre, path, areaCostList_, noAreaTypes_))
+        if (j == 2)
         {
-          navMeshFiltered_.colors[index] = navMesh_.colors[i - 3];
-          navMeshFiltered_.points[index] = navMesh_.points[i - 3];
+          centre.x = centre.x / 3.0;
+          centre.y = centre.y / 3.0;
+          centre.z = centre.z / 3.0;
 
-          navMeshFiltered_.colors[index + 1] = navMesh_.colors[i - 2];
-          navMeshFiltered_.points[index + 1] = navMesh_.points[i - 2];
+          if (recast_.query(reference_point_, centre, path, areaCostList_, noAreaTypes_))
+          {
+            navMeshFiltered_.colors[index] = navMesh_.colors[(3 * +i) + j - 2];
+            navMeshFiltered_.points[index] = navMesh_.points[(3 * +i) + j - 2];
 
-          navMeshFiltered_.colors[index + 2] = navMesh_.colors[i - 1];
-          navMeshFiltered_.points[index + 2] = navMesh_.points[i - 1];
+            navMeshFiltered_.colors[index + 1] = navMesh_.colors[(3 * +i) + j - 1];
+            navMeshFiltered_.points[index + 1] = navMesh_.points[(3 * +i) + j - 1];
 
-          navMeshLineListFiltered_.points[lineIndex] = navMesh_.points[i - 3];
-          navMeshLineListFiltered_.points[lineIndex + 1] = navMesh_.points[i - 2];
-          navMeshLineListFiltered_.points[lineIndex + 2] = navMesh_.points[i - 3];
-          navMeshLineListFiltered_.points[lineIndex + 3] = navMesh_.points[i - 1];
-          navMeshLineListFiltered_.points[lineIndex + 4] = navMesh_.points[i - 2];
-          navMeshLineListFiltered_.points[lineIndex + 5] = navMesh_.points[i - 1];
+            navMeshFiltered_.colors[index + 2] = navMesh_.colors[(3 * +i) + j];
+            navMeshFiltered_.points[index + 2] = navMesh_.points[(3 * +i) + j];
 
-          index += 3;
-          lineIndex += 6;
+            navMeshLineListFiltered_.points[lineIndex] = navMesh_.points[(3 * +i) + j - 2];
+            navMeshLineListFiltered_.points[lineIndex + 1] = navMesh_.points[(3 * +i) + j - 1];
+            navMeshLineListFiltered_.points[lineIndex + 2] = navMesh_.points[(3 * +i) + j - 2];
+            navMeshLineListFiltered_.points[lineIndex + 3] = navMesh_.points[(3 * +i) + j];
+            navMeshLineListFiltered_.points[lineIndex + 4] = navMesh_.points[(3 * +i) + j - 1];
+            navMeshLineListFiltered_.points[lineIndex + 5] = navMesh_.points[(3 * +i) + j];
+
+            index += 3;
+            lineIndex += 6;
+          }
+          centre.x = 0;
+          centre.y = 0;
+          centre.z = 0;
         }
-        centre.x = p.x;
-        centre.y = p.y;
-        centre.z = p.z;
       }
+      navMeshLineList_.points[6 * i + 0] = navMesh_.points[3 * i + 0];
+      navMeshLineList_.points[6 * i + 1] = navMesh_.points[3 * i + 1];
+      navMeshLineList_.points[6 * i + 2] = navMesh_.points[3 * i + 1];
+      navMeshLineList_.points[6 * i + 3] = navMesh_.points[3 * i + 2];
+      navMeshLineList_.points[6 * i + 4] = navMesh_.points[3 * i + 0];
+      navMeshLineList_.points[6 * i + 5] = navMesh_.points[3 * i + 2];
     }
   }
   bool addObstacleService(recast_ros::AddObstacleSrv::Request &req, recast_ros::AddObstacleSrv::Response &res)
@@ -410,7 +412,12 @@ struct RecastNode
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level) // dynamic reconfiguration, update node parameters and class' private variables
   {
 
-    if (frequency_ == config.loop_rate)
+    if (cellSize_ != config.cell_size ||
+      cellHeight_ != config.cell_height ||
+      agentHeight_ != config.agent_height ||
+      agentRadius_ != config.agent_radius ||
+      agentMaxClimb_ != config.agent_max_climb ||
+      agentMaxSlope_ != config.agent_max_slope)
     {
 
       ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
@@ -427,6 +434,11 @@ struct RecastNode
       agentRadius_ = config.agent_radius;
       agentMaxClimb_ = config.agent_max_climb;
       agentMaxSlope_ = config.agent_max_slope;
+
+      updateMeshCheck_ = true;
+    }
+    else
+    {
 
       /*    if (areaCostList_.size() > 0)
       areaCostList_[0] = config.TERRAIN_TYPE0_COST;*/
@@ -468,10 +480,7 @@ struct RecastNode
         areaCostList_[18] = config.TERRAIN_TYPE18_COST;
       if (areaCostList_.size() > 19)
         areaCostList_[19] = config.TERRAIN_TYPE19_COST;
-      updateMeshCheck_ = true;
-    }
-    else
-    {
+
       frequency_ = config.loop_rate;
       loopRate_ = ros::Rate(frequency_);
     }
@@ -649,12 +658,11 @@ struct RecastNode
       return;
     }
 
-    pcl::PolygonMesh::Ptr pclMeshPtr;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr temp, pclOriginalCloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pclNavMeshCloud, pclOriginalCloud;
     pclOriginalCloud.reset(new pcl::PointCloud<pcl::PointXYZ>());
     std::vector<Eigen::Vector3d> lineList;
     std::vector<unsigned char> areaList;
-    if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
+    if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList))
       ROS_INFO("Could not retrieve NavMesh");
 
     // Dynamic Reconfiguration start
@@ -675,12 +683,7 @@ struct RecastNode
     setVisualParameters(navMeshLineListFiltered_, visualization_msgs::Marker::LINE_LIST, "Filtered NavMesh  Lines", 13);
     setVisualParameters(originalLineList_, visualization_msgs::Marker::LINE_LIST, "Original Mesh Lines", 8);
 
-    pcl::PointCloud<pcl::PointXYZ> polyVerts, triVerts;
-
-    pcl::fromPCLPointCloud2(pclMesh_.cloud, triVerts);
-    pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
-
-    buildNavMeshVisualization(polyVerts, lineList, areaList);
+    buildNavMeshVisualization(pclNavMesh_, pclNavMeshCloud, areaList);
     buildOriginalMeshVisualization(pclMesh_, pclOriginalCloud, areaLabels_);
 
     // infinite loop
@@ -705,7 +708,6 @@ struct RecastNode
         navMeshLineListFiltered_.points.clear();
         navMeshLineListFiltered_.colors.clear();
 
-        polyVerts.clear();
         areaList.clear();
         lineList.clear();
 
@@ -731,12 +733,11 @@ struct RecastNode
         }
 
         // Get new navigation mesh
-        if (!recast_.getNavMesh(pclMeshPtr, temp, lineList, areaList))
+        if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList))
           ROS_INFO("FAILED");
 
-        pcl::fromPCLPointCloud2(pclMeshPtr->cloud, polyVerts);
         // Create Rviz Markers based on new navigation mesh
-        buildNavMeshVisualization(polyVerts, lineList, areaList);
+        buildNavMeshVisualization(pclNavMesh_, pclNavMeshCloud, areaList);
 
         // clear update requirement flag
         updateMeshCheck_ = false;
@@ -812,6 +813,7 @@ struct RecastNode
   ros::ServiceServer serviceInputMap_;
   recast_ros::RecastPlanner recast_;
   pcl::PolygonMesh pclMesh_;
+  pcl::PolygonMesh::Ptr pclNavMesh_;
   // path planner settings
   pcl::PointXYZ reference_point_;
   double startX_;
@@ -821,12 +823,12 @@ struct RecastNode
   double goalY_;
   double goalZ_;
   // recast settings
-  float cellSize_;
-  float cellHeight_;
-  float agentHeight_;
-  float agentRadius_;
-  float agentMaxClimb_;
-  float agentMaxSlope_;
+  double cellSize_;
+  double cellHeight_;
+  double agentHeight_;
+  double agentRadius_;
+  double agentMaxClimb_;
+  double agentMaxSlope_;
   const int noAreaTypes_; // Number of Area Types
   bool dynamicReconfigure_;
   std::vector<float> areaCostList_;
