@@ -1,14 +1,14 @@
 #include "ros/ros.h"
-#include "recast_ros/RemoveAllObstaclesSrv.h"
+#include <std_srvs/Trigger.h>
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "test_remove_all_obstacles");
 
     ros::NodeHandle clientNode("~");
-    ros::ServiceClient client = clientNode.serviceClient<recast_ros::RemoveAllObstaclesSrv>("/recast_node/remove_all_obstacles");
+    ros::ServiceClient client = clientNode.serviceClient<std_srvs::Trigger>("/recast_node/remove_all_obstacles");
 
-    recast_ros::RemoveAllObstaclesSrv srv;
+    std_srvs::Trigger srv;
 
 
     if (client.call(srv))

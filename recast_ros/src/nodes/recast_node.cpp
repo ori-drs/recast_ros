@@ -3,7 +3,7 @@
 #include "recast_ros/RecastProjectSrv.h"
 #include "recast_ros/RecastPathSrv.h"
 #include "recast_ros/AddObstacleSrv.h"
-#include "recast_ros/RemoveAllObstaclesSrv.h"
+#include <std_srvs/Trigger.h>
 #include "recast_ros/InputMeshSrv.h"
 #include "recast_ros/RecastPathMsg.h"
 #include <pcl/common/io.h>
@@ -406,9 +406,11 @@ struct RecastNode
 
     return obstacleAdded_;
   }
-  bool removeAllObstacles(recast_ros::RemoveAllObstaclesSrv::Request &req, recast_ros::RemoveAllObstaclesSrv::Response &res)
+  bool removeAllObstacles(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   {
     recast_.clearAllRecastObstacles();
+    res.success = true;
+    res.message = "Obstacles are removed";
     obstacleRemoved_ = true;
 
     return obstacleRemoved_;
@@ -750,6 +752,7 @@ struct RecastNode
         updateMeshCheck_ = false;
         obstacleAdded_ = false;
         newMapReceived_ = false;
+        obstacleRemoved_ = false;
         loopCount = 0;
       }
 

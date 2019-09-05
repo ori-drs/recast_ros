@@ -103,7 +103,6 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    RecastPathSrv.srv
    RecastProjectSrv.srv
    AddObstacleSrv.srv
-   RemoveAllObstaclesSrv.srv
  )
 
 ## Generate actions in the 'action' folder
