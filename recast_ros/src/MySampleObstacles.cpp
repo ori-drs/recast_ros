@@ -354,7 +354,7 @@ int MySampleObstacles::rasterizeTileLayers(
 
 		for (int k = 0; k < ntris; k++) //Pass Area Types to Triangles
 		{
-			rc.triareas[k] = 1; // TODO: Area types will be used
+			rc.triareas[k] = 1;
 		}
 
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))

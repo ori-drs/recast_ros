@@ -5,7 +5,7 @@
 class TestPlanningServiceInteractive
 {
 public:
-  TestPlanningServiceInteractive(ros::NodeHandle& node_handle) : node_handle_(node_handle)
+  TestPlanningServiceInteractive(ros::NodeHandle &node_handle) : node_handle_(node_handle)
   {
     // ros params
     node_handle_.param("target_topic", target_topic_, std::string("/move_base_simple/goal"));
@@ -15,7 +15,7 @@ public:
     // subscribe target
     subscriber_ = node_handle_.subscribe(target_topic_, 1, &TestPlanningServiceInteractive::callback, this);
   }
-  void callback(const geometry_msgs::PoseStamped& msg)
+  void callback(const geometry_msgs::PoseStamped &msg)
   {
     ROS_INFO("Received point: %f %f %f", msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
     target_ = msg.pose.position;
@@ -27,7 +27,8 @@ public:
 
     // loop
     ros::Rate loop_rate(loop_rate_);
-    while (ros::ok()) {
+    while (ros::ok())
+    {
 
       // get current state. TODO: take as param?
       geometry_msgs::Point current;
@@ -39,19 +40,22 @@ public:
       recast_ros::RecastPathSrv srv;
       srv.request.startXYZ = current;
       srv.request.goalXYZ = target_;
-      if (!client_recast.call(srv)) {
+      if (!client_recast.call(srv))
+      {
         ROS_ERROR("Failed to call recast query service");
-        continue;
+        // continue;
       }
-      if (srv.response.path.size() < 2) {
+      if (srv.response.path.size() < 2)
+      {
         ROS_ERROR("Could not find a path");
-        continue;
+        //  continue;
       }
 
       ros::spinOnce();
       loop_rate.sleep();
     }
   }
+
 protected:
   ros::NodeHandle node_handle_;
   ros::Subscriber subscriber_;
@@ -61,7 +65,7 @@ protected:
   geometry_msgs::Point target_;
 };
 
-int main (int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "high_level_planner_node");
   ros::NodeHandle node_handle("~");
@@ -69,4 +73,3 @@ int main (int argc, char* argv[])
   test_planning_service_interactive.run();
   return 0;
 }
-

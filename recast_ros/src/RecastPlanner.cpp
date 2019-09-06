@@ -3,6 +3,7 @@
 #include "Recast.h"
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
+//#include "NavMeshTesterTool.h"
 #include "DetourCommon.h"
 #include <Eigen/Dense>
 #include <pcl/io/vtk_lib_io.h>
@@ -39,8 +40,8 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   sample->handleMeshChanged(geom.get()); //, areaTypes);
   sample->handleSettings();
   sample->handleBuild(areaTypes);
-  
-  if(!sample)
+
+  if (!sample)
     return false;
 
   return true;
@@ -58,7 +59,7 @@ bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &
   return build(pclMesh, areaTypes);
 }
 
-bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount)
+bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount,const int & noPolygons)
 {
   if (!sample)
     return false;
@@ -67,7 +68,7 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   if (!navmesh || !navquery)
     return false;
 
-  static const int MAX_POLYS = 256;
+  static const int MAX_POLYS = std::max(256, noPolygons);
   dtPolyRef polys[MAX_POLYS];
   float straight[MAX_POLYS * 3];
   const float polyPickExt[3] = {2, 4, 2};
@@ -78,7 +79,9 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   filter.setIncludeFlags(0x3);
   filter.setExcludeFlags(0x0);
 
-  for (int index = 0; index < areaTypeCount; index++)
+  filter.setAreaCost(0, 0);
+
+  for (int index = 1; index < areaTypeCount; index++)
   {
     filter.setAreaCost(index, areaCostList[index]);
   }
@@ -231,7 +234,7 @@ bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &pro
   return true;
 }
 
-bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList) const
+bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const
 {
   if (!sample)
   {
@@ -296,6 +299,7 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
   pcl::toPCLPointCloud2(*pclcloud, pclmesh->cloud);
   int ntri = pclcloud->points.size() / 3;
   pclmesh->polygons.resize(ntri);
+  noPolygons = ntri;
 
   //pcl::PointCloud<pcl::PointXYZ> polyVerts;
 
@@ -334,7 +338,8 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh) const
   pcl::PointCloud<pcl::PointXYZ>::Ptr pclcloud;
   std::vector<Eigen::Vector3d> lineList;
   std::vector<unsigned char> areaList;
-  return getNavMesh(pclmesh, pclcloud, lineList, areaList);
+  int numPoly = 0;
+  return getNavMesh(pclmesh, pclcloud, lineList, areaList, numPoly);
 }
 
 bool RecastPlanner::getNavMesh(std::vector<Eigen::Vector3d> &lineList) const
@@ -342,7 +347,8 @@ bool RecastPlanner::getNavMesh(std::vector<Eigen::Vector3d> &lineList) const
   pcl::PolygonMesh::Ptr pclmesh;
   pcl::PointCloud<pcl::PointXYZ>::Ptr pclcloud;
   std::vector<unsigned char> areaList;
-  return getNavMesh(pclmesh, pclcloud, lineList, areaList);
+  int numPoly = 0;
+  return getNavMesh(pclmesh, pclcloud, lineList, areaList, numPoly);
 }
 
 /*float RecastPlanner::getDtAreaCost(const int &index)

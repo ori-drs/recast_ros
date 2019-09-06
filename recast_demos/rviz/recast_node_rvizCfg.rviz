@@ -63,29 +63,29 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /recast_node/navigation_mesh
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /recast_node/navigation_mesh_lines
       Name: Marker
       Namespaces:
-        {}
+        NavMesh Lines: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /recast_node/filtered_navigation_mesh
       Name: Marker
       Namespaces:
-        {}
+        Filtered NavMesh Triangles: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /recast_node/filtered_navigation_mesh_lines
@@ -142,6 +142,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/triangle_nodes
+      Name: Marker
+      Namespaces:
+        nodes: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -170,7 +178,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 47.77753829956055
+      Distance: 94.3141860961914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -185,10 +193,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2147966623306274
+      Pitch: 0.5147980451583862
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.3053895831108093
+      Yaw: 1.8953819274902344
     Saved: ~
 Window Geometry:
   Displays:
