@@ -415,6 +415,7 @@ struct RecastNode
     }
 
     ROS_INFO("Building Filtered NavMesh takes  %f (ms)", exec_time);
+    ROS_INFO("Number of NavMeshFiltered Polygons: %d", navMeshFiltered_.points.size() / 3);
   }
   bool addObstacleService(recast_ros::AddObstacleSrv::Request &req, recast_ros::AddObstacleSrv::Response &res)
   {
@@ -709,6 +710,10 @@ struct RecastNode
     std::vector<unsigned char> areaList;
     if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList, noPolygons_))
       ROS_INFO("Could not retrieve NavMesh");
+    else
+    {
+      ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
+    }
 
     // Dynamic Reconfiguration start
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
@@ -785,7 +790,10 @@ struct RecastNode
         // Get new navigation mesh
         if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList, noPolygons_))
           ROS_INFO("FAILED");
-
+        else
+        {
+          ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
+        }
         // Create Rviz Markers based on new navigation mesh
         buildNavMeshVisualization(pclNavMesh_, pclNavMeshCloud, areaList);
 
