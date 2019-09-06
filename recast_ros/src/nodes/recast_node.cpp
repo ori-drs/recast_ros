@@ -346,7 +346,6 @@ struct RecastNode
     double exec_time = 0;
 
     ros::WallTime startFunc, endFunc;
-
     for (int i = 0; i < npoly; i++)
     {
       for (int j = 0; j < 3; j++)
@@ -396,7 +395,7 @@ struct RecastNode
             navMeshLineListFiltered_.points.push_back(navMesh_.points[(3 * +i) + j - 1]);
             navMeshLineListFiltered_.points.push_back(navMesh_.points[(3 * +i) + j]);
 
-            // index += 3;
+            index += 3;
             // lineIndex += 6;
           }
           centre.x = 0;
@@ -414,6 +413,7 @@ struct RecastNode
       navMeshLineList_.points.push_back(navMesh_.points[3 * i + 2]);
     }
 
+    navMeshFiltered_.points.resize(index);
     ROS_INFO("Building Filtered NavMesh takes  %f (ms)", exec_time);
     ROS_INFO("Number of NavMeshFiltered Polygons: %d", navMeshFiltered_.points.size() / 3);
   }
