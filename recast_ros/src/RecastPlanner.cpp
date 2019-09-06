@@ -123,9 +123,6 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   if (myRes == DT_SUCCESS)
     foundFullPath = true;
 
-  //for(int i = 0; i < 1000 && areaCostList[2] == 8; i++)
-  //  printf("\nMyResulting dtStatus is %d", myRes);
-
   // Find straight path
   if (npolys)
     navquery->findStraightPath(spos, epos, polys, npolys, straight, 0, 0, &nstraight, MAX_POLYS);

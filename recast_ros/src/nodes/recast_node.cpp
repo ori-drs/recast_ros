@@ -323,7 +323,7 @@ struct RecastNode
     centre.y = 0;
     centre.z = 0;
 
-    std::vector<float> areaCostListCopy(noAreaTypes_, 0.1);
+   // std::vector<float> areaCostListCopy(noAreaTypes_, 0.1);
 
     pcl::fromPCLPointCloud2(pclMesh->cloud, *pclCloud);
     int npoly = pclMesh->polygons.size();
@@ -377,7 +377,7 @@ struct RecastNode
           nodeList_.points.push_back(p);
           nodeList_.colors.push_back(c);
 
-          if (recast_.query(reference_point_, centre, path, areaCostListCopy, noAreaTypes_, noPolygons_))
+          if (recast_.query(reference_point_, centre, path, areaCostList_, noAreaTypes_, noPolygons_))
           {
             navMeshFiltered_.colors.push_back(navMesh_.colors[(3 * +i) + j - 2]);
             navMeshFiltered_.points.push_back(navMesh_.points[(3 * +i) + j - 2]);
