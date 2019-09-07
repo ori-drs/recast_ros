@@ -36,6 +36,7 @@ struct RecastNode
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
     nodeHandle_.param("rviz_marker_loop_rate", rvizFrequency_, 10);
+    nodeHandle_.getParam("search_buffer_size", searchBufferSize_);
 
     // ros publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
@@ -249,7 +250,7 @@ struct RecastNode
     ros::WallTime startFunc, endFunc;
     double exec_time = 0;
     startFunc = ros::WallTime::now();
-    if (!recast_.build(pclMesh, trilabels))
+    if (!recast_.build(pclMesh, trilabels, searchBufferSize_))
     {
       ROS_ERROR("Could not build NavMesh");
       return false;
@@ -323,7 +324,7 @@ struct RecastNode
     centre.y = 0;
     centre.z = 0;
 
-   // std::vector<float> areaCostListCopy(noAreaTypes_, 0.1);
+    // std::vector<float> areaCostListCopy(noAreaTypes_, 0.1);
 
     pcl::fromPCLPointCloud2(pclMesh->cloud, *pclCloud);
     int npoly = pclMesh->polygons.size();
@@ -415,7 +416,8 @@ struct RecastNode
 
     navMeshFiltered_.points.resize(index);
     ROS_INFO("Building Filtered NavMesh takes  %f (ms)", exec_time);
-    ROS_INFO("Number of NavMeshFiltered Polygons: %d", navMeshFiltered_.points.size() / 3);
+    int numPoly = navMeshFiltered_.points.size() / 3;
+    ROS_INFO("Number of NavMeshFiltered Polygons: %d", numPoly);
   }
   bool addObstacleService(recast_ros::AddObstacleSrv::Request &req, recast_ros::AddObstacleSrv::Response &res)
   {
@@ -695,7 +697,7 @@ struct RecastNode
     ros::WallTime startFunc, endFunc;
     double exec_time = 0;
     startFunc = ros::WallTime::now();
-    if (!recast_.build(pclMesh_, areaLabels_))
+    if (!recast_.build(pclMesh_, areaLabels_, searchBufferSize_))
     {
       ROS_ERROR("Could not build NavMesh");
       return;
@@ -905,6 +907,7 @@ struct RecastNode
   double agentMaxClimb_;
   double agentMaxSlope_;
   const int noAreaTypes_; // Number of Area Types
+  int searchBufferSize_; // Search nodePool buffer size
   bool dynamicReconfigure_;
   std::vector<float> areaCostList_;
   std::vector<char> areaLabels_;

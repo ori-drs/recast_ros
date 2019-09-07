@@ -16,6 +16,7 @@
     <param name="agent_max_climb" value="0.41f" />
     <param name="agent_max_slope" value="60.0f" />
     <param name="loop_rate" value="100.0" />
+    <param name="search_buffer_size" value="10240" />
 
     <param name="TERRAIN_TYPE1_COST" value="1.0f" />
     <param name="TERRAIN_TYPE2_COST" value="1.0f" />

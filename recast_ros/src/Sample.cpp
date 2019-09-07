@@ -69,7 +69,7 @@ void Sample::setTool(SampleTool* tool)
 		m_tool->init(this);
 }
 */
-void Sample::handleSettings()
+void Sample::handleSettings(const int &nodeSize)
 {
 }
 /*
@@ -233,7 +233,7 @@ void Sample::handleStep()
 		m_tool->handleStep();
 }
 */
-bool Sample::handleBuild(const std::vector<char> &areaTypes)
+bool Sample::handleBuild(const std::vector<char> &areaTypes, const int &nodeSize)
 {
 	return true;
 }

@@ -13,8 +13,8 @@ class RecastPlanner
 {
 public:
   RecastPlanner();
-  bool build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes);
-  bool loadAndBuild(const std::string &mapFile, const std::string &areaFile);
+  bool build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes, const int & maxNodeSize);
+  bool loadAndBuild(const std::string &mapFile, const std::string &areaFile, const int & maxNodeSize);
   bool query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount, const int & noPolygons);
   bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType);
   boost::shared_ptr<Sample> getMySample() { return sample; }
