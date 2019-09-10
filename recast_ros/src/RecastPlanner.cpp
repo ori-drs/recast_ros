@@ -28,16 +28,17 @@ RecastPlanner::RecastPlanner() : needToRotateMesh(true)
   stg.partitionType = SAMPLE_PARTITION_WATERSHED;
 }
 
-bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes, const int & maxNodeSize)
+bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes, const int &maxNodeSize)
 {
   // Build navmesh
   geom = boost::shared_ptr<InputGeom>(new InputGeom());
   if (!geom->load(&ctx, pclMesh, needToRotateMesh))
     return false;
+  //Recast settings are set
   geom->setBuildSettings(stg);
   sample = boost::shared_ptr<Sample>(new MySampleObstacles());
   sample->setContext(&ctx);
-  sample->handleMeshChanged(geom.get()); //, areaTypes);
+  sample->handleMeshChanged(geom.get());
   sample->handleSettings(maxNodeSize);
   sample->handleBuild(areaTypes, maxNodeSize);
 
@@ -47,7 +48,7 @@ bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<cha
   return true;
 }
 
-bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &areaFile, const int & maxNodeSize)
+bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &areaFile, const int &maxNodeSize)
 {
   // Load mesh file
   pcl::PolygonMesh pclMesh;
@@ -59,7 +60,8 @@ bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &
   return build(pclMesh, areaTypes, maxNodeSize);
 }
 
-bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount,const int & noPolygons)
+//High Level Path Planner
+bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount, const int &noPolygons)
 {
   if (!sample)
     return false;
@@ -68,6 +70,7 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   if (!navmesh || !navquery)
     return false;
 
+  //MAX_POLYS is buffer size for path length. Longer paths/Bigger maps requires bigger buffer size. Default = 256
   static const int MAX_POLYS = std::max(256, noPolygons);
   dtPolyRef polys[MAX_POLYS];
   float straight[MAX_POLYS * 3];
@@ -79,6 +82,7 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   filter.setIncludeFlags(0x3);
   filter.setExcludeFlags(0x0);
 
+  //Area Types starts from 1, thus areatype0 has no cost
   filter.setAreaCost(0, 0);
 
   for (int index = 1; index < areaTypeCount; index++)
@@ -86,7 +90,7 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
     filter.setAreaCost(index, areaCostList[index]);
   }
 
-  // Convert
+  // Convert ROS Axes | Recast Axes
   float spos[3];
   float epos[3];
   float nspos[3];
@@ -129,7 +133,7 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   else
     return false;
 
-  // Convert
+  // Convert ROS Axes | Recast Axes
   path.resize(nstraight);
   if (needToRotateMesh)
   {
@@ -152,12 +156,13 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
   return foundFullPath;
 }
 //Assume cylindrical obstacle
+//WARNING ! Each operation regarding to Obstacles requires a map update afterwards
 bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
 {
+  // Convert ROS Axes | Recast Axes
   float x[3] = {pos[0], pos[2], -pos[1]};
 
   dtStatus res = sample->addTempObstacle(x, radi, height);
-  //update();
 
   if (res == DT_SUCCESS)
     return true;
@@ -173,11 +178,10 @@ void RecastPlanner::clearAllRecastObstacles()
 void RecastPlanner::update()
 {
   // Update sample simulation.
-  printf("Recast Update\n");
-
-  sample->handleUpdate(0.01);
+  float deltaTime = 0.01;
+  sample->handleUpdate(deltaTime);
 }
-
+//test_planning_service_interactive function for 2D Nav Goal functionality
 bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType)
 {
   if (!sample)
@@ -234,18 +238,18 @@ bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &pro
 
   return true;
 }
-
+//Converts dtNavMesh => pcl::PolygonMesh
 bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const
 {
   if (!sample)
   {
-    std::cout << "SampleObj FAILED\n";
+    ROS_ERROR("SampleObj FAILED");
     return false;
   }
   const dtNavMesh *mesh = sample->getNavMesh();
   if (!mesh)
   {
-    std::cout << "dtNavMesh FAILED\n";
+    ROS_ERROR("dtNavMesh FAILED");
     return false;
   }
 
@@ -257,7 +261,7 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
 
   if (mesh->getMaxTiles() < 1)
   {
-    std::cout << "Max tiles are 0";
+    ROS_ERROR("Max tiles are 0");
     return false;
   }
   for (int i = 0; i < mesh->getMaxTiles(); ++i)
@@ -302,10 +306,6 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
   pclmesh->polygons.resize(ntri);
   noPolygons = ntri;
 
-  //pcl::PointCloud<pcl::PointXYZ> polyVerts;
-
-  // pcl::fromPCLPointCloud2(pclmesh->cloud, polyVerts);
-
   for (int i = 0; i < ntri; i++)
   {
     pclmesh->polygons[i].vertices.resize(3);
@@ -314,7 +314,7 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
     pclmesh->polygons[i].vertices[2] = i * 3 + 2;
   }
 
-  // line list
+  // line list for triangles
   lineList.reserve(ntri * 6);
   for (int i = 0; i < ntri; i++)
   {
@@ -351,19 +351,6 @@ bool RecastPlanner::getNavMesh(std::vector<Eigen::Vector3d> &lineList) const
   int numPoly = 0;
   return getNavMesh(pclmesh, pclcloud, lineList, areaList, numPoly);
 }
-
-/*float RecastPlanner::getDtAreaCost(const int &index)
-{
-  return sample->getMyAreaCost(index);
-}
-
-void RecastPlanner::setDtAreaCost(const int &index, const int &cost)
-{
-
-  sample->setMyAreaCost(index, cost);
-  std::cout << "1\n";
-  return;
-}*/
 
 bool recast_ros::loadAreas(const std::string &path, std::vector<char> &labels)
 {

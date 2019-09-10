@@ -16,6 +16,8 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is adapted version of Sample_TempObstacles.cpp in original RecastDemo
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdio.h>
@@ -1164,9 +1166,6 @@ dtStatus MySampleObstacles::addTempObstacle(const float *pos, const float &radi,
 	dtVcopy(p, pos);
 	p[1] -= 0.5f;
 	dtStatus res = m_tileCache->addObstacle(p, radi, height, 0);
-	//this->handleUpdate(0.01);
-	if (res == DT_SUCCESS)
-		std::cout << "\nObstacle created\n";
 
 	return res;
 }

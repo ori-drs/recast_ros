@@ -2,7 +2,7 @@
 #include "recast_ros/AddObstacleSrv.h"
 #include <pcl/common/io.h>
 #include <cstdlib>
-#include <iostream>
+#include <string>
 
 int main(int argc, char **argv)
 {
@@ -13,11 +13,12 @@ int main(int argc, char **argv)
 
     geometry_msgs::Point firstArr;
     std::vector<double> myBuff(6, 1);
+    std::vector<std::string> myMessage = {"x = ", "y = ", "z = ", "Radius = ", "Height = "};
 
     for (int i = 1; i < argc; i++)
     {
         myBuff[i - 1] = atof(argv[i]);
-        std::cout << myBuff[i - 1] << std::endl;
+        ROS_INFO("%s%f", myMessage[i - 1].c_str(), myBuff[i - 1]);
     }
 
     firstArr.x = myBuff[0];
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        ROS_INFO("Failed to add obstacle");
+        ROS_ERROR("Failed to add obstacle");
         return 1;
     }
 

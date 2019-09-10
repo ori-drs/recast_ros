@@ -16,6 +16,9 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is adapted version of Sample_TempObstacles.h in original RecastDemo
+
+
 #ifndef RECASTSAMPLETEMPOBSTACLE_H
 #define RECASTSAMPLETEMPOBSTACLE_H
 
