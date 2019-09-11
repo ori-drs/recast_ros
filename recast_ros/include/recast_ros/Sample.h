@@ -16,6 +16,9 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is updated version of Sample.h in original 'recastnavigation'
+
+
 #ifndef RECASTSAMPLE_H
 #define RECASTSAMPLE_H
 

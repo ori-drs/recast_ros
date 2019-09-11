@@ -16,6 +16,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+
+// This program is updated version of Sample.cpp in original 'recastnavigation'
+
+
 #define _USE_MATH_DEFINES
 #include "recast_ros/Sample.h"
 #include "recast_ros/InputGeom.h"

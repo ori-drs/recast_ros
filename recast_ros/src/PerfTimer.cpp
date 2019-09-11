@@ -16,6 +16,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is updated version of PerfTimer.cpp in original 'recastnavigation'
+
+
+
 #include "recast_ros/PerfTimer.h"
 
 #if defined(WIN32)

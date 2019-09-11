@@ -16,7 +16,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-// This program is adapted version of Sample_TempObstacles.cpp in original RecastDemo
+// This program is updated version of Sample_TempObstacles.cpp in original 'recastnavigation'
 
 #define _USE_MATH_DEFINES
 #include <math.h>

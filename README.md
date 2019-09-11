@@ -20,7 +20,7 @@ roslaunch recast_demos gridmap_fsc_res5cm.launch
 ### Input mesh service to recast_node:
 
 First run the demo to get the FSC mesh (see recast_demos section above).
-If you have another map as input, put .obj file path and .dat file path ( .dat file is for area types, this is optional) into recast_demos/launch/test_input_map.launch
+If you have another map as input, put .obj file path and .dat file path ( .dat file is for area types, this is optional) into recast_demos/launch/test_input_map.launch <br />
 Then:
 
 ```

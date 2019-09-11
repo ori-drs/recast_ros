@@ -16,7 +16,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-// This program is adapted version of Sample_SoloMesh.h in original RecastDemo
+// This program is updated version of Sample_SoloMesh.h in original 'recastnavigation'
 
 
 #ifndef RECASTSAMPLESOLOMESH_H
