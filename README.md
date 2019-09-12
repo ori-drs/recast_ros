@@ -1,6 +1,14 @@
 # recast_ros
 
-## recast_ros
+This package is a ROS wrapper for [recastnavigation](https://github.com/recastnavigation/recastnavigation.git). It allows to build and use navigation meshes for path planning, where the meshes can have areas of different types (and costs).
+
+If you use this in your research, please cite:
+
+> Martim Brandao, Omer Burak Aladag, and Ioannis Havoutis, "**GaitMesh: controller-aware navigation meshes for long-range legged
+locomotion planning in multi-layered environments**", in *ICRA2020* (submitted).
+
+
+## Building
 
 You need to download the original recastnavigation source code:
 ```
@@ -19,8 +27,12 @@ roslaunch recast_demos gridmap_fsc_res5cm.launch
 
 ### Input mesh service to recast_node:
 
-First run the demo to get the FSC mesh (see recast_demos section above).
-If you have another map as input, put .obj file path and .dat file path ( .dat file is for area types, this is optional) into recast_demos/launch/test_input_map.launch <br />
+First run the demo to get an annotated mesh in the data folder (see recast_demos section above).
+If you want to provide your own map as input, then set the "path" and "path_areas" parameters in recast_demos/launch/test_input_map.launch accordingly:
+
+- "path" is the path to an .obj file with the mesh of your environment.
+- "path_areas" (optional) is the path to a .dat file which is a binary-encoded sequence of char variables representing the area-type of each of the polygons in the .obj file, in the same order.
+
 Then:
 
 ```
@@ -28,13 +40,16 @@ roslaunch recast_demos recast_node.launch
 roslaunch recast_demos test_input_map.launch
 ```
 
-For configuration of NavigationMesh run:
+For the configuration of NavigationMesh you can run:
 
 ```
 rosrun rqt_reconfigure rqt_reconfigure
 ```
 
-Set respective parameters Recast/Detour and RecastPlanner to desired values within limitations.
+and set parameters to desired values.
+
+Dynamic reconfiguring can also be turned off in the recast_node.launch file, in case you prefer to use launch-file parameters instead.
+
 
 ### Testing path planning service:
 
@@ -52,6 +67,7 @@ rosrun recast_ros test_planning_service_interactive
 
 Use '2D Nav Goal' tool in RViz to give goal position to the agent. Start position is defined in recast_ros/src/nodes/test_planning_service_interactive.cpp
 
+
 ### Adding static obstacles service:
 
 All obstacles assumed to be in cylindrical shape, to add obstacles to map run:
@@ -60,7 +76,7 @@ All obstacles assumed to be in cylindrical shape, to add obstacles to map run:
 rosrun recast_ros test_add_obstacles [x pos] [y pos] [z pos] [radius] [height]
 ```
 
-**Each re-build operations removes all the obstacles present, another way to remove all obstacles is,
+Each re-build operations removes all the obstacles present, another way to remove all obstacles is,
 
 ```
 rosrun recast_ros test_remove_all_obstacles
