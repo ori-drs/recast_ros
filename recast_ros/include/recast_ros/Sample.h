@@ -16,6 +16,9 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is updated version of Sample.h in original 'recastnavigation'
+
+
 #ifndef RECASTSAMPLE_H
 #define RECASTSAMPLE_H
 
@@ -158,7 +161,7 @@ public:
 	//SampleToolState* getToolState(int type) { return m_toolStates[type]; }
 	//void setToolState(int type, SampleToolState* s) { m_toolStates[type] = s; }
 
-	virtual void handleSettings();
+	virtual void handleSettings(const int &nodeSize = 2048);
 	//virtual void handleTools();
 	//virtual void handleDebugMode();
 	//virtual void handleClick(const float* s, const float* p, bool shift);
@@ -167,7 +170,7 @@ public:
 	//virtual void handleRender();
 	//virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom *geom); //, const std::vector<char> &areaTypes);
-	virtual bool handleBuild(const std::vector<char> &areaTypes);
+	virtual bool handleBuild(const std::vector<char> &areaTypes, const int &nodeSize = 2048);
 	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);
 	virtual dtStatus addTempObstacle(const float *pos, const float &radi, const float &height) = 0;
@@ -202,6 +205,7 @@ private:
 	// Explicitly disabled copy constructor and copy assignment operator.
 	Sample(const Sample &);
 	Sample &operator=(const Sample &);
+
 };
 
 #endif // RECASTSAMPLE_H

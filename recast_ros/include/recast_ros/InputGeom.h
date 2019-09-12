@@ -16,6 +16,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+
+// This program is updated version of InputGeom.h in original 'recastnavigation'
+
+
 #ifndef INPUTGEOM_H
 #define INPUTGEOM_H
 

@@ -16,6 +16,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+
+// This program is updated version of SampleInterfaces.h in original 'recastnavigation'
+
+
 #ifndef SAMPLEINTERFACES_H
 #define SAMPLEINTERFACES_H
 

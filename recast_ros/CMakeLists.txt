@@ -1,3 +1,20 @@
+
+
+##  Copyright (c) 2019 Martim Brandão, Omer Burak Aladag
+##  This software is provided 'as-is', without any express or implied
+##  warranty. In no event will the authors be held liable for any damages
+##  arising from the use of this software.
+##  Permission is granted to anyone to use this software for any purpose,
+##  including commercial applications, and to alter it and redistribute it
+##  freely, subject to the following restrictions:
+##  1. The origin of this software must not be misrepresented; you must not
+##    claim that you wrote the original software. If you use this software
+##    in a product, an acknowledgment in the product documentation would be
+##    appreciated but is not required.
+##  2. Altered source versions must be plainly marked as such, and must not be
+##    misrepresented as being the original software.
+##  3. This notice may not be removed or altered from any source distribution.
+
 cmake_minimum_required(VERSION 2.8.3)
 project(recast_ros)
 
@@ -8,10 +25,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
   pcl_ros
+  pcl_conversions
+  pcl_msgs
   dynamic_reconfigure
   std_msgs
   geometry_msgs
   visualization_msgs
+  sensor_msgs
   message_generation
 )
 
@@ -96,10 +116,10 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
+   InputMeshSrv.srv
    RecastPathSrv.srv
    RecastProjectSrv.srv
    AddObstacleSrv.srv
-   RemoveAllObstaclesSrv.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -114,8 +134,8 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
    DEPENDENCIES
    std_msgs
    geometry_msgs
-#  sensor_msgs
-#  pcl_msgs
+   sensor_msgs
+   pcl_msgs
  )
 
 ################################################
@@ -149,7 +169,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wabian_planner
-  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs
+  CATKIN_DEPENDS roscpp roslib visualization_msgs pcl_ros message_runtime geometry_msgs pcl_conversions pcl_msgs
 #  DEPENDS system_lib
 )
 
@@ -198,7 +218,9 @@ add_executable(test_planning_service_interactive src/nodes/test_planning_service
 target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})
 add_dependencies(test_planning_service_interactive ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-
+add_executable(test_input_map src/nodes/test_input_map.cpp)
+target_link_libraries(test_input_map recast_ros ${catkin_LIBRARIES})
+add_dependencies(test_input_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

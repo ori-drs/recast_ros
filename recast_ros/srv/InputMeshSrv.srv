@@ -1,0 +1,4 @@
+char[] area_labels
+pcl_msgs/PolygonMesh input_mesh
+geometry_msgs/Point reference_point
+---

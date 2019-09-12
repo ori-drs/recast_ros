@@ -16,6 +16,9 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is updated version of Sample_TempObstacles.h in original 'recastnavigation'
+
+
 #ifndef RECASTSAMPLETEMPOBSTACLE_H
 #define RECASTSAMPLETEMPOBSTACLE_H
 
@@ -65,13 +68,13 @@ public:
 	MySampleObstacles();
 	virtual ~MySampleObstacles();
 	
-	virtual void handleSettings();
+	virtual void handleSettings(const int &nodeSize = 2048);
 	virtual void handleTools();
 	virtual void handleDebugMode();
 	virtual void handleRender();
 	virtual void handleRenderOverlay(double* proj, double* model, int* view);
 	virtual void handleMeshChanged(class InputGeom* geom);//, const std::vector<char> &areaTypes);
-	virtual bool handleBuild(const std::vector<char> &areaTypes);
+	virtual bool handleBuild(const std::vector<char> &areaTypes, const int &nodeSize = 2048);
 	virtual void handleUpdate(const float dt);
 
 	void getTilePos(const float* pos, int& tx, int& ty);
@@ -90,6 +93,7 @@ private:
 	// Explicitly disabled copy constructor and copy assignment operator.
 	MySampleObstacles(const MySampleObstacles&);
 	MySampleObstacles& operator=(const MySampleObstacles&);
+	// maxNode size for NavMeshQuery 
 
 	int rasterizeTileLayers(const int tx, const int ty, const rcConfig& cfg, struct TileCacheData* tiles, const int maxTiles,const std::vector<char> &areaTypes);
 };

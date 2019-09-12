@@ -16,6 +16,8 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// This program is updated version of Sample_TempObstacles.cpp in original 'recastnavigation'
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdio.h>
@@ -354,7 +356,7 @@ int MySampleObstacles::rasterizeTileLayers(
 
 		for (int k = 0; k < ntris; k++) //Pass Area Types to Triangles
 		{
-			rc.triareas[k] = 1; // TODO: Area types will be used
+			rc.triareas[k] = 1;
 		}
 
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
@@ -847,7 +849,7 @@ MySampleObstacles::~MySampleObstacles()
 	dtFreeTileCache(m_tileCache);
 }
 
-void MySampleObstacles::handleSettings()
+void MySampleObstacles::handleSettings(const int &nodeSize)
 {
 	Sample::handleCommonSettings();
 
@@ -925,7 +927,7 @@ void MySampleObstacles::handleSettings()
 	dtFreeNavMesh(m_navMesh);
 	dtFreeTileCache(m_tileCache);
 	loadAll("all_tiles_tilecache.bin");
-	m_navQuery->init(m_navMesh, 2048);
+	m_navQuery->init(m_navMesh, 30720);
 	/* 	}
 
 	imguiUnindent();
@@ -1164,9 +1166,6 @@ dtStatus MySampleObstacles::addTempObstacle(const float *pos, const float &radi,
 	dtVcopy(p, pos);
 	p[1] -= 0.5f;
 	dtStatus res = m_tileCache->addObstacle(p, radi, height, 0);
-	//this->handleUpdate(0.01);
-	if (res == DT_SUCCESS)
-		std::cout << "\nObstacle created\n";
 
 	return res;
 }
@@ -1192,7 +1191,7 @@ void MySampleObstacles::clearAllTempObstacles()
 	}
 }
 
-bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes)
+bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes, const int &nodeSize)
 {
 	dtStatus status;
 
@@ -1290,7 +1289,7 @@ bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes)
 		return false;
 	}
 
-	status = m_navQuery->init(m_navMesh, 2048);
+	status = m_navQuery->init(m_navMesh, 30720);
 	if (dtStatusFailed(status))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildTiledNavigation: Could not init Detour navmesh query");

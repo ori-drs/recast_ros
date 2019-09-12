@@ -21,9 +21,14 @@ freely, subject to the following restrictions:
 
 <launch>
 
-  <node pkg="recast_ros" type="test_planning_service_interactive" name="test_planning_service_interactive" output="screen" respawn="true">
-    <param name="target_topic" value="/move_base_simple/goal" />
-    <param name="loop_rate" value="30.0" />
+  <!-- load and publish fsc map -->
+  <node pkg="recast_ros" type="test_input_map" name="test_input_map" respawn="false" output="screen">
+  	<param name="path" value="$(find recast_demos)/data/annotate_cloud_gaits_mesh.obj" />
+  	<param name="path_areas" value="$(find recast_demos)/data/annotate_cloud_gaits_mesh.dat" />
+    <param name="reference_point_x" value="14.0f" />
+    <param name="reference_point_y" value="16.0f" />
+    <param name="reference_point_z" value="-1.16f" />
+
   </node>
 
 </launch>

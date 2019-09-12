@@ -16,6 +16,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+
+// This program is updated version of Sample.cpp in original 'recastnavigation'
+
+
 #define _USE_MATH_DEFINES
 #include "recast_ros/Sample.h"
 #include "recast_ros/InputGeom.h"
@@ -69,7 +73,7 @@ void Sample::setTool(SampleTool* tool)
 		m_tool->init(this);
 }
 */
-void Sample::handleSettings()
+void Sample::handleSettings(const int &nodeSize)
 {
 }
 /*
@@ -233,7 +237,7 @@ void Sample::handleStep()
 		m_tool->handleStep();
 }
 */
-bool Sample::handleBuild(const std::vector<char> &areaTypes)
+bool Sample::handleBuild(const std::vector<char> &areaTypes, const int &nodeSize)
 {
 	return true;
 }
