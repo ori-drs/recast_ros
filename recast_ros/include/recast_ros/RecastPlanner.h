@@ -1,5 +1,5 @@
   //
-// Copyright (c) 2019 Martim Brandão martim@robots.ox.ac.uk, Omer Burak Aladag aladagomer@sabanciuniv.edu
+// Copyright (c) 2019 Martim Brandão martim@robots.ox.ac.uk, Omer Burak Aladag aladagomer@sabanciuniv.edu, Ioannis Havoutis havoutis@robots.ox.ac.uk
 // As a part of Dynamic Robot Systems Group, Oxford Robotics Institute, University of Oxford
 //
   // This software is provided 'as-is', without any express or implied
