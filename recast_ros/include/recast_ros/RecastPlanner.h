@@ -46,6 +46,7 @@ public:
   bool addRecastObstacle(const float *pos, const float &radi, const float &height);
   void clearAllRecastObstacles();
   void update();
+  bool drawRecastGraph(std::vector<float> &graphNodes,const pcl::PointXYZ &reference_point, const int & noPolygons, const int & searchRadius);
   //Converts dtNavMesh map to pcl::PolygonMesh
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const;
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh) const;

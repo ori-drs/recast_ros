@@ -16,6 +16,8 @@ Panels:
         - /Marker8
         - /Marker9
         - /Marker10
+        - /Marker11
+        - /Marker12
       Splitter Ratio: 0.5009041428565979
     Tree Height: 889
   - Class: rviz/Selection
@@ -111,48 +113,56 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /recast_node/recast_path_lines
-      Name: Marker
-      Namespaces:
-        Path Lines: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /recast_node/recast_obstacles
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /recast_node/recast_path_start
-      Name: Marker
-      Namespaces:
-        Agent Start Position: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /recast_node/recast_path_goal
-      Name: Marker
-      Namespaces:
-        Agent Goal Position: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
       Enabled: false
-      Marker Topic: /recast_node/triangle_nodes
+      Marker Topic: /recast_node/recast_path_lines
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /recast_node/recast_obstacles
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /recast_node/recast_path_start
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /recast_node/recast_path_goal
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/graph_nodes
+      Name: Marker
+      Namespaces:
+        Graph Nodes: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /recast_node/graph_connections
+      Name: Marker
+      Namespaces:
+        Graph Connections: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 85; 87; 83
     Default Light: true
     Fixed Frame: map
     Frame Rate: 30
@@ -178,7 +188,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 94.3141860961914
+      Distance: 58.39181900024414
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -193,10 +203,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5597963333129883
+      Pitch: 0.7547973990440369
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.25856876373291
+      Yaw: 5.953535556793213
     Saved: ~
 Window Geometry:
   Displays:

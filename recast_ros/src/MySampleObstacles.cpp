@@ -927,7 +927,7 @@ void MySampleObstacles::handleSettings(const int &nodeSize)
 	dtFreeNavMesh(m_navMesh);
 	dtFreeTileCache(m_tileCache);
 	loadAll("all_tiles_tilecache.bin");
-	m_navQuery->init(m_navMesh, 30720);
+	m_navQuery->init(m_navMesh, nodeSize);
 	/* 	}
 
 	imguiUnindent();
@@ -1289,7 +1289,7 @@ bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes, const in
 		return false;
 	}
 
-	status = m_navQuery->init(m_navMesh, 30720);
+	status = m_navQuery->init(m_navMesh, nodeSize);
 	if (dtStatusFailed(status))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildTiledNavigation: Could not init Detour navmesh query");

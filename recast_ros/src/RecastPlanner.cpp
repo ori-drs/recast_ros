@@ -21,6 +21,7 @@
 #include "Recast.h"
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
+#include "DetourNode.h"
 //#include "NavMeshTesterTool.h"
 #include "DetourCommon.h"
 #include <Eigen/Dense>
@@ -253,6 +254,104 @@ bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &pro
   // Get area type
   if (navmesh->getPolyArea(ref, &areaType) != DT_SUCCESS)
     return false;
+
+  return true;
+}
+
+//Same function from NavMeshTesterTool in original recastnavigation
+static void getPolyCenter(dtNavMesh *navMesh, dtPolyRef ref, float *center)
+{
+  center[0] = 0;
+  center[1] = 0;
+  center[2] = 0;
+
+  const dtMeshTile *tile = 0;
+  const dtPoly *poly = 0;
+  dtStatus status = navMesh->getTileAndPolyByRef(ref, &tile, &poly);
+  if (dtStatusFailed(status))
+    return;
+
+  for (int i = 0; i < (int)poly->vertCount; ++i)
+  {
+    const float *v = &tile->verts[poly->verts[i] * 3];
+    center[0] += v[0];
+    center[1] += v[1];
+    center[2] += v[2];
+  }
+  const float s = 1.0f / poly->vertCount;
+  center[0] *= s;
+  center[1] *= s;
+  center[2] *= s;
+}
+//Builds non-directional graph of reachable polygons from reference_point in a circular region with radius searchRadius
+bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes,const pcl::PointXYZ &reference_point, const int & noPolygons, const int & searchRadius)
+{
+  if (!sample)
+  {
+    ROS_ERROR("Sample FAILED");
+    return false;
+  }
+  dtNavMesh *mesh = sample->getNavMesh();
+  if (!mesh)
+  {
+    ROS_ERROR("dtNavMesh FAILED");
+    return false;
+  }
+  dtNavMeshQuery *query = sample->getNavMeshQuery();
+  if (!query)
+  {
+    ROS_ERROR("dtNavMeshQuery FAILED");
+    return false;
+  }
+
+  //MAX_POLYS is buffer size for path length. Longer paths/Bigger maps requires bigger buffer size. Default = 256
+  static const int MAX_POLYS = std::max(256, noPolygons);
+  dtPolyRef polys[MAX_POLYS];
+  dtPolyRef parent[MAX_POLYS];
+
+  float straight[MAX_POLYS * 3];
+  const float polyPickExt[3] = {2, 4, 2};
+  int npolys = 0;
+
+  dtQueryFilter filter;
+  filter.setIncludeFlags(0x3);
+  filter.setExcludeFlags(0x0);
+
+  // Convert ROS Axes | Recast Axes
+  float spos[3];
+  float nspos[3];
+
+  spos[0] = reference_point.x;
+  spos[1] = -reference_point.z;
+  spos[2] = reference_point.y;
+
+
+  // Find start points
+  dtPolyRef startRef;
+  query->findNearestPoly(spos, polyPickExt, &filter, &startRef, nspos);
+  if (!startRef)
+    return false;
+
+  query->findPolysAroundCircle(startRef, spos, searchRadius, &filter,
+                               polys, parent, 0, &npolys, noPolygons);
+
+  for (int i = 0; i < npolys; ++i)
+  {
+    if (parent[i])
+    {
+      float p0[3], p1[3];
+      getPolyCenter(mesh, parent[i], p0);
+      getPolyCenter(mesh, polys[i], p1);
+
+      graphNodes.push_back(p0[0]);
+      graphNodes.push_back(-p0[2]);
+      graphNodes.push_back(p0[1]);
+
+      graphNodes.push_back(p1[0]);
+      graphNodes.push_back(-p1[2]);
+      graphNodes.push_back(p1[1]);
+    }
+  }
 
   return true;
 }
