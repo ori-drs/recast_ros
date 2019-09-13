@@ -35,6 +35,7 @@
 #include <iterator>
 #include <vector>
 #include <fstream>
+#include <limits>
 
 struct RecastNode
 {
@@ -792,7 +793,7 @@ struct RecastNode
       ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
     }
 
-    if (!recast_.drawRecastGraph(graphNodes_, reference_point_, searchBufferSize_, searchRadius_))
+    if (!recast_.drawRecastGraph(graphNodes_))
       ROS_ERROR("Recast Graph is failed");
 
     // Dynamic Reconfiguration start
@@ -879,7 +880,7 @@ struct RecastNode
         else
           ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
 
-        if (recast_.drawRecastGraph(graphNodes_, reference_point_, noPolygons_, searchRadius_))
+        if (recast_.drawRecastGraph(graphNodes_))
         {
           graphNodeList_.points.clear();
           graphNodeList_.colors.clear();
@@ -995,7 +996,6 @@ struct RecastNode
   double goalY_;
   double goalZ_;
   int noPolygons_ = 0;
-  int searchRadius_ = 10240;
   // recast settings
   double cellSize_;
   double cellHeight_;

@@ -259,7 +259,7 @@ bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &pro
 }
 
 //Same function from NavMeshTesterTool in original recastnavigation
-static void getPolyCenter(dtNavMesh *navMesh, dtPolyRef ref, float *center)
+static void getPolyCenter(const dtNavMesh *navMesh, dtPolyRef ref, float *center)
 {
   center[0] = 0;
   center[1] = 0;
@@ -283,78 +283,85 @@ static void getPolyCenter(dtNavMesh *navMesh, dtPolyRef ref, float *center)
   center[1] *= s;
   center[2] *= s;
 }
+
+//Same function from NavMeshTesterTool in original recastnavigation
+static void getPolyCenter(const dtNavMesh *navMesh, const dtPoly *poly, const dtMeshTile *tile, float *center)
+{
+  center[0] = 0;
+  center[1] = 0;
+  center[2] = 0;
+
+  for (int i = 0; i < (int)poly->vertCount; ++i)
+  {
+    const float *v = &tile->verts[poly->verts[i] * 3];
+    center[0] += v[0];
+    center[1] += v[1];
+    center[2] += v[2];
+  }
+  const float s = 1.0f / poly->vertCount;
+  center[0] *= s;
+  center[1] *= s;
+  center[2] *= s;
+}
+
 //Builds non-directional graph of reachable polygons from reference_point in a circular region with radius searchRadius
-bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes,const pcl::PointXYZ &reference_point, const int & noPolygons, const int & searchRadius)
+bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes)
 {
   if (!sample)
   {
-    ROS_ERROR("Sample FAILED");
+    ROS_ERROR("SampleObj FAILED");
     return false;
   }
-  dtNavMesh *mesh = sample->getNavMesh();
+  const dtNavMesh *mesh = sample->getNavMesh();
   if (!mesh)
   {
     ROS_ERROR("dtNavMesh FAILED");
     return false;
   }
-  dtNavMeshQuery *query = sample->getNavMeshQuery();
-  if (!query)
+
+  // go through all tiles
+
+  if (mesh->getMaxTiles() < 1)
   {
-    ROS_ERROR("dtNavMeshQuery FAILED");
+    ROS_ERROR("Max tiles are 0");
     return false;
   }
-
-  //MAX_POLYS is buffer size for path length. Longer paths/Bigger maps requires bigger buffer size. Default = 256
-  static const int MAX_POLYS = std::max(256, noPolygons);
-  dtPolyRef polys[MAX_POLYS];
-  dtPolyRef parent[MAX_POLYS];
-
-  float straight[MAX_POLYS * 3];
-  const float polyPickExt[3] = {2, 4, 2};
-  int npolys = 0;
-
-  dtQueryFilter filter;
-  filter.setIncludeFlags(0x3);
-  filter.setExcludeFlags(0x0);
-
-  // Convert ROS Axes | Recast Axes
-  float spos[3];
-  float nspos[3];
-
-  spos[0] = reference_point.x;
-  spos[1] = -reference_point.z;
-  spos[2] = reference_point.y;
-
-
-  // Find start points
-  dtPolyRef startRef;
-  query->findNearestPoly(spos, polyPickExt, &filter, &startRef, nspos);
-  if (!startRef)
-    return false;
-
-  query->findPolysAroundCircle(startRef, spos, searchRadius, &filter,
-                               polys, parent, 0, &npolys, noPolygons);
-
-  for (int i = 0; i < npolys; ++i)
+  for (int i = 0; i < mesh->getMaxTiles(); ++i)
   {
-    if (parent[i])
+    const dtMeshTile *tile = mesh->getTile(i);
+    if (!tile->header)
+      continue;
+    for (int i = 0; i < tile->header->polyCount; ++i)
     {
-      float p0[3], p1[3];
-      getPolyCenter(mesh, parent[i], p0);
-      getPolyCenter(mesh, polys[i], p1);
+      dtPoly *p = &tile->polys[i];
+      dtPolyRef pRef = tile->links[i].ref;
+      if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) // Skip off-mesh links.
+        continue;
+      for (unsigned int j = p->firstLink; j != DT_NULL_LINK; j = tile->links[j].next)
+      {
+        dtPolyRef neighbourRef = tile->links[j].ref;
+        const dtMeshTile *neighbourTile = 0;
+        const dtPoly *neighbourPoly = 0;
+        mesh->getTileAndPolyByRefUnsafe(neighbourRef, &neighbourTile, &neighbourPoly);
+        float c0[3], c1[3];
 
-      graphNodes.push_back(p0[0]);
-      graphNodes.push_back(-p0[2]);
-      graphNodes.push_back(p0[1]);
+        getPolyCenter(mesh, neighbourRef, c0);
+        getPolyCenter(mesh, p, tile, c1);
 
-      graphNodes.push_back(p1[0]);
-      graphNodes.push_back(-p1[2]);
-      graphNodes.push_back(p1[1]);
+        graphNodes.push_back(c0[0]);
+        graphNodes.push_back(-c0[2]);
+        graphNodes.push_back(c0[1]);
+
+        graphNodes.push_back(c1[0]);
+        graphNodes.push_back(-c1[2]);
+        graphNodes.push_back(c1[1]);
+      }
     }
   }
 
   return true;
 }
+
 //Converts dtNavMesh => pcl::PolygonMesh
 bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const
 {
