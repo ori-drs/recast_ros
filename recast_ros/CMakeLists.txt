@@ -1,6 +1,6 @@
 
 
-##  Copyright (c) 2019 Martim Brandão, Omer Burak Aladag
+##  Copyright (c) 2019 Martim Brandão martim@robots.ox.ac.uk, Omer Burak Aladag aladagomer@sabanciuniv.edu, Ioannis Havoutis havoutis@robots.ox.ac.uk
 ##  This software is provided 'as-is', without any express or implied
 ##  warranty. In no event will the authors be held liable for any damages
 ##  arising from the use of this software.
