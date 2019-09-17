@@ -71,7 +71,7 @@ struct RecastNode
     RecastPathStartPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_start", 1);
     RecastPathGoalPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_goal", 1);
     RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_obstacles", 1);
-    graphNodePub_ = nodeHandle_.advertise<visualization_msgs::MarkerArray>("graph_nodes", 1);
+    graphNodePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_nodes", 1);
     graphConnectionPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_connections", 1);
 
     interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("menu", "", false));
@@ -186,7 +186,7 @@ struct RecastNode
       v.scale.y = 0.0;
       v.scale.z = 0.0;
     }
-    else if (v.type == visualization_msgs::Marker::SPHERE && nameSpace == "")
+    else if ((v.type == visualization_msgs::Marker::SPHERE && nameSpace == "") || v.type == visualization_msgs::Marker::SPHERE_LIST)
     {
       v.scale.x = 0.2;
       v.scale.y = 0.2;
@@ -450,61 +450,46 @@ struct RecastNode
   {
     geometry_msgs::Point p;
     std_msgs::ColorRGBA c;
+    c.a = 1; // Set Alpha to 1 for visibility
+    c.r = 0.5;
+    c.b = 0.5;
+    c.g = 0;
 
     double exec_time = 0;
 
     int nodeSize = graphNodes_.size();
 
+    graphNodeList_.color.r = c.r;
+    graphNodeList_.color.b = c.b;
+    graphNodeList_.color.g = c.g;
+    graphNodeList_.color.a = 1;
+
+    graphNodeList_.colors.resize(nodeSize, c);
+
     c.r = 0.390625;
     c.b = 0.13671875;
     c.g = 0.3359375;
-    c.a = 1;
 
     graphConnectionList_.color.r = c.r;
     graphConnectionList_.color.b = c.b;
     graphConnectionList_.color.g = c.g;
-    graphConnectionList_.color.a = c.a;
 
-    graphConnectionList_.colors.resize(nodeSize / 3, c);
+    graphConnectionList_.colors.resize(nodeSize, c);
 
     graphConnectionList_.scale.x = 0.05;
 
-    c.r = 0.5;
-    c.b = 0.5;
-    c.g = 0;
-
-    graphNodeList_.markers.reserve(nodeSize / 3);
+    graphNodeList_.points.reserve(nodeSize / 3);
     graphConnectionList_.points.reserve(nodeSize / 3);
 
     ros::WallTime startFunc, endFunc;
     startFunc = ros::WallTime::now();
-    int id = 0;
-
     for (int i = 0; i < nodeSize; i = i + 3)
     {
-      visualization_msgs::Marker newMarker;
-      id = i / 3;
-      std::string name = "Graph Node" + id;
-      setVisualParameters(newMarker, visualization_msgs::Marker::SPHERE, name, i);
-
       p.x = graphNodes_[i];
       p.y = graphNodes_[i + 1];
-      p.z = graphNodes_[i + 2] + newMarker.scale.z / 2;
+      p.z = graphNodes_[i + 2] + graphNodeList_.scale.z / 2;
 
-      newMarker.color.r = c.r;
-      newMarker.color.b = c.b;
-      newMarker.color.g = c.g;
-      newMarker.color.a = c.a;
-
-      newMarker.scale.x = 0.2;
-      newMarker.scale.y = 0.2;
-      newMarker.scale.z = 0.2;
-
-      newMarker.pose.position.x = p.x;
-      newMarker.pose.position.y = p.y;
-      newMarker.pose.position.z = p.z;
-
-      graphNodeList_.markers.push_back(newMarker);
+      graphNodeList_.points.push_back(p);
       graphConnectionList_.points.push_back(p);
     }
     endFunc = ros::WallTime::now();
@@ -890,59 +875,29 @@ struct RecastNode
   }
   void makeMenuMarker()
   {
-    //    intMarkerVec_.resize(graphNodeList_.markers.size());
-    //    intControlVec_.resize(graphNodeList_.markers.size());
+    visualization_msgs::InteractiveMarker intMarker_;
+    visualization_msgs::InteractiveMarkerControl intControl_;
 
-    for (size_t i = 0; i < graphNodeList_.markers.size(); i++)
-    {
+    intControl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+    intControl_.always_visible = true;
+    intMarker_.scale = 0.2;
+    intMarker_.header.frame_id = "map";
 
-      visualization_msgs::InteractiveMarker intMarker_;
-      visualization_msgs::InteractiveMarkerControl intControl_;
+    intMarker_.name = navMeshFiltered_.ns + "Interactive";
+    intControl_.markers.push_back(navMeshFiltered_);
+    intMarker_.controls.push_back(intControl_);
+    interactiveMarkerServer_->insert(intMarker_);
 
-      intControl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
-      intControl_.always_visible = true;
-      intMarker_.scale = 0.2;
-      intMarker_.header.frame_id = "map";
-      // intMarkerVec_[i].header.frame_id = "map";
-      // intControlVec_[i].interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
-      // intControlVec_[i].always_visible = true;
-      // intMarkerVec_[i].scale = 0.5;
-
-      visualization_msgs::Marker newMarker;
-      setVisualParameters(newMarker, visualization_msgs::Marker::SPHERE, "", graphNodeList_.markers[i].id);
-
-      intMarker_.name = graphNodeList_.markers[i].ns + "Interactive";
-      intMarker_.pose.position.x = graphNodeList_.markers[i].pose.position.x;
-      intMarker_.pose.position.y = graphNodeList_.markers[i].pose.position.y;
-      intMarker_.pose.position.z = graphNodeList_.markers[i].pose.position.z;
-
-      newMarker.pose.position.x = graphNodeList_.markers[i].pose.position.x;
-      newMarker.pose.position.y = graphNodeList_.markers[i].pose.position.y;
-      newMarker.pose.position.z = graphNodeList_.markers[i].pose.position.z;
-
-      newMarker.color.r = 0.5;
-      newMarker.color.b = 0.5;
-      newMarker.color.g = 0;
-      newMarker.color.a = 1;
-
-      //intControlVec_.push_back(intControl_);
-      // intMarkerVec_.push_back(intMarker_);
-
-      intControl_.markers.push_back(newMarker);
-      intMarker_.controls.push_back(intControl_);
-      interactiveMarkerServer_->insert(intMarker_);
-
-      menuHandler_.apply(*interactiveMarkerServer_, graphNodeList_.markers[i].ns + "Interactive");
-    }
+    menuHandler_.apply(*interactiveMarkerServer_, navMeshFiltered_.ns + "Interactive");
 
     interactiveMarkerServer_->applyChanges();
   }
 
   void setStart(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
   {
-    startX_ = feedback->pose.position.x;
-    startY_ = feedback->pose.position.y;
-    startZ_ = feedback->pose.position.z;
+    startX_ = feedback->mouse_point.x;
+    startY_ = feedback->mouse_point.y;
+    startZ_ = feedback->mouse_point.z;
 
     startSet_ = true;
 
@@ -953,9 +908,9 @@ struct RecastNode
   }
   void setGoal(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
   {
-    goalX_ = feedback->pose.position.x;
-    goalY_ = feedback->pose.position.y;
-    goalZ_ = feedback->pose.position.z;
+    goalX_ = feedback->mouse_point.x;
+    goalY_ = feedback->mouse_point.y;
+    goalZ_ = feedback->mouse_point.z;
 
     goalSet_ = true;
 
@@ -1004,6 +959,7 @@ struct RecastNode
     setVisualParameters(navMeshLineList_, visualization_msgs::Marker::LINE_LIST, "NavMesh Lines", 4);
     setVisualParameters(navMeshLineListFiltered_, visualization_msgs::Marker::LINE_LIST, "Filtered NavMesh  Lines", 13);
     setVisualParameters(originalLineList_, visualization_msgs::Marker::LINE_LIST, "Original Mesh Lines", 8);
+    setVisualParameters(graphNodeList_, visualization_msgs::Marker::SPHERE_LIST, "Graph Nodes", 15);
     setVisualParameters(graphConnectionList_, visualization_msgs::Marker::LINE_LIST, "Graph Connections", 16);
 
     /*     //Builds initial Mesh Visualization
@@ -1073,7 +1029,8 @@ struct RecastNode
 
         if (recast_.drawRecastGraph(graphNodes_))
         {
-          graphNodeList_.markers.clear();
+          graphNodeList_.points.clear();
+          graphNodeList_.colors.clear();
 
           graphConnectionList_.points.clear();
           graphConnectionList_.colors.clear();
@@ -1228,7 +1185,7 @@ struct RecastNode
   visualization_msgs::Marker navMeshLineListFiltered_;
   visualization_msgs::Marker orgTriList_;
   visualization_msgs::Marker originalLineList_;
-  visualization_msgs::MarkerArray graphNodeList_;
+  visualization_msgs::Marker graphNodeList_;
   visualization_msgs::Marker graphConnectionList_;
   std::vector<visualization_msgs::Marker> obstacleList_;
   visualization_msgs::Marker pathList_;

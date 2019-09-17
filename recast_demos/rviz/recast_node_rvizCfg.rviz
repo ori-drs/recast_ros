@@ -86,7 +86,7 @@ Visualization Manager:
       Marker Topic: /recast_node/filtered_navigation_mesh
       Name: Marker
       Namespaces:
-        Filtered NavMesh Triangles: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -94,7 +94,7 @@ Visualization Manager:
       Marker Topic: /recast_node/filtered_navigation_mesh_lines
       Name: Marker
       Namespaces:
-        Filtered NavMesh  Lines: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -146,29 +146,29 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /recast_node/graph_nodes
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /recast_node/graph_connections
       Name: Marker
       Namespaces:
-        Graph Connections: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /recast_node/graph_nodes
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
