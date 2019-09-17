@@ -18,6 +18,7 @@ Panels:
         - /Marker10
         - /Marker11
         - /Marker12
+        - /InteractiveMarkers1
       Splitter Ratio: 0.5009041428565979
     Tree Height: 889
   - Class: rviz/Selection
@@ -145,13 +146,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /recast_node/graph_nodes
       Name: Marker
       Namespaces:
-        Graph Nodes: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /recast_node/graph_connections
@@ -159,6 +160,23 @@ Visualization Manager:
       Namespaces:
         Graph Connections: true
       Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /recast_node/graph_nodes
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /menu/update
       Value: true
   Enabled: true
   Global Options:
@@ -188,7 +206,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 58.39181900024414
+      Distance: 28.37142562866211
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -203,10 +221,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7547973990440369
+      Pitch: 0.7647972106933594
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.953535556793213
+      Yaw: 5.288527488708496
     Saved: ~
 Window Geometry:
   Displays:

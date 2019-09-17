@@ -29,13 +29,18 @@
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/InteractiveMarkerControl.h>
+#include <visualization_msgs/InteractiveMarker.h>
+
+#include <interactive_markers/interactive_marker_server.h>
+#include <interactive_markers/menu_handler.h>
 #include <dynamic_reconfigure/server.h>
 #include <ros/package.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
 #include <fstream>
-#include <limits>
 
 struct RecastNode
 {
@@ -66,8 +71,10 @@ struct RecastNode
     RecastPathStartPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_start", 1);
     RecastPathGoalPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_goal", 1);
     RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_obstacles", 1);
-    graphNodePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_nodes", 1);
+    graphNodePub_ = nodeHandle_.advertise<visualization_msgs::MarkerArray>("graph_nodes", 1);
     graphConnectionPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_connections", 1);
+
+    interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("menu", "", false));
 
     // create colour list for area types
     colourList_ = {
@@ -179,7 +186,7 @@ struct RecastNode
       v.scale.y = 0.0;
       v.scale.z = 0.0;
     }
-    else if (v.type == visualization_msgs::Marker::SPHERE_LIST)
+    else if (v.type == visualization_msgs::Marker::SPHERE && nameSpace == "")
     {
       v.scale.x = 0.2;
       v.scale.y = 0.2;
@@ -443,46 +450,61 @@ struct RecastNode
   {
     geometry_msgs::Point p;
     std_msgs::ColorRGBA c;
-    c.a = 1; // Set Alpha to 1 for visibility
-    c.r = 0.5;
-    c.b = 0.5;
-    c.g = 0;
 
     double exec_time = 0;
 
     int nodeSize = graphNodes_.size();
 
-    graphNodeList_.color.r = c.r;
-    graphNodeList_.color.b = c.b;
-    graphNodeList_.color.g = c.g;
-    graphNodeList_.color.a = 1;
-
-    graphNodeList_.colors.resize(nodeSize, c);
-
     c.r = 0.390625;
     c.b = 0.13671875;
     c.g = 0.3359375;
+    c.a = 1;
 
     graphConnectionList_.color.r = c.r;
     graphConnectionList_.color.b = c.b;
     graphConnectionList_.color.g = c.g;
+    graphConnectionList_.color.a = c.a;
 
-    graphConnectionList_.colors.resize(nodeSize, c);
+    graphConnectionList_.colors.resize(nodeSize / 3, c);
 
     graphConnectionList_.scale.x = 0.05;
 
-    graphNodeList_.points.reserve(nodeSize / 3);
+    c.r = 0.5;
+    c.b = 0.5;
+    c.g = 0;
+
+    graphNodeList_.markers.reserve(nodeSize / 3);
     graphConnectionList_.points.reserve(nodeSize / 3);
 
     ros::WallTime startFunc, endFunc;
     startFunc = ros::WallTime::now();
+    int id = 0;
+
     for (int i = 0; i < nodeSize; i = i + 3)
     {
+      visualization_msgs::Marker newMarker;
+      id = i / 3;
+      std::string name = "Graph Node" + id;
+      setVisualParameters(newMarker, visualization_msgs::Marker::SPHERE, name, i);
+
       p.x = graphNodes_[i];
       p.y = graphNodes_[i + 1];
-      p.z = graphNodes_[i + 2] + graphNodeList_.scale.z / 2;
+      p.z = graphNodes_[i + 2] + newMarker.scale.z / 2;
 
-      graphNodeList_.points.push_back(p);
+      newMarker.color.r = c.r;
+      newMarker.color.b = c.b;
+      newMarker.color.g = c.g;
+      newMarker.color.a = c.a;
+
+      newMarker.scale.x = 0.2;
+      newMarker.scale.y = 0.2;
+      newMarker.scale.z = 0.2;
+
+      newMarker.pose.position.x = p.x;
+      newMarker.pose.position.y = p.y;
+      newMarker.pose.position.z = p.z;
+
+      graphNodeList_.markers.push_back(newMarker);
       graphConnectionList_.points.push_back(p);
     }
     endFunc = ros::WallTime::now();
@@ -734,6 +756,116 @@ struct RecastNode
 
     return checkStatus;
   }
+  void findPathPlanner()
+  {
+    ros::WallTime startFunc, endFunc, pathStart, pathEnd;
+    startFunc = ros::WallTime::now();
+    //Set visual default visual parameters
+    geometry_msgs::Point p;
+    std_msgs::ColorRGBA c;
+    setVisualParameters(pathList_, visualization_msgs::Marker::LINE_LIST, "Path Lines", 0);
+    setVisualParameters(agentStartPos_, visualization_msgs::Marker::SPHERE, "Agent Start Position", 1);
+    setVisualParameters(agentGoalPos_, visualization_msgs::Marker::SPHERE, "Agent Goal Position", 10);
+    //Get Input
+    ROS_INFO("Input positions are;");
+    ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
+    ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
+    // test path planning (Detour)
+    std::vector<pcl::PointXYZ> path;
+    pcl::PointXYZ start, goal;
+    start.x = startX_;
+    start.y = startY_;
+    start.z = startZ_;
+
+    goal.x = goalX_;
+    goal.y = goalY_;
+    goal.z = goalZ_;
+
+    //Add markers for Start & Goal Position
+    agentStartPos_.pose.position.x = startX_;
+    agentStartPos_.pose.position.y = startY_;
+    agentStartPos_.pose.position.z = startZ_ + agentHeight_;
+    agentStartPos_.color.a = 0.6;
+    agentStartPos_.color.r = 0.0;
+    agentStartPos_.color.g = 1.0;
+    agentStartPos_.color.b = 0.0;
+
+    agentGoalPos_.pose.position.x = goalX_;
+    agentGoalPos_.pose.position.y = goalY_;
+    agentGoalPos_.pose.position.z = goalZ_ + agentHeight_;
+    agentGoalPos_.color.a = 0.6;
+    agentGoalPos_.color.r = 1.0;
+    agentGoalPos_.color.g = 0.0;
+    agentGoalPos_.color.b = 0.0;
+
+    // query recast/detour for the path
+    pathStart = ros::WallTime::now();
+    bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_, noPolygons_);
+    pathEnd = ros::WallTime::now();
+
+    double exec_time = (pathEnd - pathStart).toNSec() * (1e-6);
+    ROS_INFO("Path Query Execution Time (ms): %f", exec_time);
+
+    //path fails
+    if (!checkStatus)
+    {
+      ROS_ERROR("Could not obtain shortest path");
+      return;
+    }
+    ROS_INFO("Success: path has size %d", (int)path.size());
+    for (unsigned int i = 0; i < path.size(); i++)
+    {
+      ROS_INFO("Recevied Path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
+    }
+
+    // avoid issues with single-point paths (=goal)
+    if (path.size() == 1)
+      path.push_back(path[0]);
+
+    //Last Path Visualization
+
+    c.a = 1.0; // Set Alpha to 1 for visibility
+    c.r = 1.0;
+    c.b = 0;
+    c.g = 1.0;
+    pathList_.colors.clear();
+    pathList_.points.clear();
+    pathList_.colors.resize(2 * path.size() - 2, c);
+    pathList_.points.resize(2 * path.size() - 2);
+
+    //Add Start Point
+    p.x = path[0].x;
+    p.y = path[0].y;
+    p.z = path[0].z + agentHeight_ / 2.0;
+
+    pathList_.scale.x = 0.1;
+    pathList_.points[0] = p;
+
+    int j = 1;
+    for (size_t i = 1; i < path.size() - 1; i++)
+    {
+      p.x = path[i].x;
+      p.y = path[i].y;
+      p.z = path[i].z + agentHeight_ / 2.0;
+
+      pathList_.points[j] = p;
+      pathList_.points[j + 1] = p;
+      j = j + 2;
+    }
+    //Add End Point
+    p.x = path[path.size() - 1].x;
+    p.y = path[path.size() - 1].y;
+    p.z = path[path.size() - 1].z + agentHeight_ / 2.0;
+    pathList_.points[pathList_.points.size() - 1] = p;
+
+    endFunc = ros::WallTime::now();
+
+    exec_time = (endFunc - startFunc).toNSec() * (1e-6);
+
+    ROS_INFO("Whole path service execution time (ms): %f", exec_time);
+
+    return;
+  }
 
   bool projectPointService(recast_ros::RecastProjectSrv::Request &req, recast_ros::RecastProjectSrv::Response &res)
   {
@@ -756,6 +888,87 @@ struct RecastNode
     res.area_type.data = (char)areaType;
     return true;
   }
+  void makeMenuMarker()
+  {
+    //    intMarkerVec_.resize(graphNodeList_.markers.size());
+    //    intControlVec_.resize(graphNodeList_.markers.size());
+
+    for (size_t i = 0; i < graphNodeList_.markers.size(); i++)
+    {
+
+      visualization_msgs::InteractiveMarker intMarker_;
+      visualization_msgs::InteractiveMarkerControl intControl_;
+
+      intControl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
+      intControl_.always_visible = true;
+      intMarker_.scale = 0.2;
+      intMarker_.header.frame_id = "map";
+      // intMarkerVec_[i].header.frame_id = "map";
+      // intControlVec_[i].interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
+      // intControlVec_[i].always_visible = true;
+      // intMarkerVec_[i].scale = 0.5;
+
+      visualization_msgs::Marker newMarker;
+      setVisualParameters(newMarker, visualization_msgs::Marker::SPHERE, "", graphNodeList_.markers[i].id);
+
+      intMarker_.name = graphNodeList_.markers[i].ns + "Interactive";
+      intMarker_.pose.position.x = graphNodeList_.markers[i].pose.position.x;
+      intMarker_.pose.position.y = graphNodeList_.markers[i].pose.position.y;
+      intMarker_.pose.position.z = graphNodeList_.markers[i].pose.position.z;
+
+      newMarker.pose.position.x = graphNodeList_.markers[i].pose.position.x;
+      newMarker.pose.position.y = graphNodeList_.markers[i].pose.position.y;
+      newMarker.pose.position.z = graphNodeList_.markers[i].pose.position.z;
+
+      newMarker.color.r = 0.5;
+      newMarker.color.b = 0.5;
+      newMarker.color.g = 0;
+      newMarker.color.a = 1;
+
+      //intControlVec_.push_back(intControl_);
+      // intMarkerVec_.push_back(intMarker_);
+
+      intControl_.markers.push_back(newMarker);
+      intMarker_.controls.push_back(intControl_);
+      interactiveMarkerServer_->insert(intMarker_);
+
+      menuHandler_.apply(*interactiveMarkerServer_, graphNodeList_.markers[i].ns + "Interactive");
+    }
+
+    interactiveMarkerServer_->applyChanges();
+  }
+
+  void setStart(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  {
+    startX_ = feedback->pose.position.x;
+    startY_ = feedback->pose.position.y;
+    startZ_ = feedback->pose.position.z;
+
+    startSet_ = true;
+
+    if (goalSet_)
+    {
+      findPathPlanner();
+    }
+  }
+  void setGoal(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  {
+    goalX_ = feedback->pose.position.x;
+    goalY_ = feedback->pose.position.y;
+    goalZ_ = feedback->pose.position.z;
+
+    goalSet_ = true;
+
+    if (startSet_)
+    {
+      findPathPlanner();
+    }
+  }
+  void initMenu()
+  {
+    setStartPos_ = menuHandler_.insert("Set Start Position", boost::bind(&RecastNode::setStart, this, _1));
+    setGoalPos_ = menuHandler_.insert("Set Goal Position", boost::bind(&RecastNode::setGoal, this, _1));
+  }
 
   void run()
   {
@@ -767,34 +980,11 @@ struct RecastNode
       loopRate_.sleep();
     }
 
-    // build NavMesh
-    ros::WallTime startFunc, endFunc;
-    double exec_time = 0;
-    startFunc = ros::WallTime::now();
-    if (!recast_.build(pclMesh_, areaLabels_, searchBufferSize_))
-    {
-      ROS_ERROR("Could not build NavMesh");
-      return;
-    }
-    endFunc = ros::WallTime::now();
-    exec_time = (endFunc - startFunc).toNSec() * (1e-6);
-    ROS_INFO("Building NavMesh takes  %f (ms)", exec_time);
-
     //Create variables for conversion dtNavMesh to pcl::PolygonMesh
     pcl::PointCloud<pcl::PointXYZ>::Ptr pclNavMeshCloud, pclOriginalCloud;
     pclOriginalCloud.reset(new pcl::PointCloud<pcl::PointXYZ>());
     std::vector<Eigen::Vector3d> lineList;
     std::vector<unsigned char> areaList;
-    //Convert dtNavMesh, areaList = User Defined Area Types, lineList = edge list of polygons
-    if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList, noPolygons_))
-      ROS_INFO("Could not retrieve NavMesh");
-    else
-    {
-      ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
-    }
-
-    if (!recast_.drawRecastGraph(graphNodes_))
-      ROS_ERROR("Recast Graph is failed");
 
     // Dynamic Reconfiguration start
     dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
@@ -807,13 +997,13 @@ struct RecastNode
 
     // Visualization
 
+    initMenu();
     setVisualParameters(navMesh_, visualization_msgs::Marker::TRIANGLE_LIST, "NavMesh Triangles", 2);
     setVisualParameters(navMeshFiltered_, visualization_msgs::Marker::TRIANGLE_LIST, "Filtered NavMesh Triangles", 12);
     setVisualParameters(orgTriList_, visualization_msgs::Marker::TRIANGLE_LIST, "Original Mesh Triangles", 3);
     setVisualParameters(navMeshLineList_, visualization_msgs::Marker::LINE_LIST, "NavMesh Lines", 4);
     setVisualParameters(navMeshLineListFiltered_, visualization_msgs::Marker::LINE_LIST, "Filtered NavMesh  Lines", 13);
     setVisualParameters(originalLineList_, visualization_msgs::Marker::LINE_LIST, "Original Mesh Lines", 8);
-    setVisualParameters(graphNodeList_, visualization_msgs::Marker::SPHERE_LIST, "Graph Nodes", 15);
     setVisualParameters(graphConnectionList_, visualization_msgs::Marker::LINE_LIST, "Graph Connections", 16);
 
     /*     //Builds initial Mesh Visualization
@@ -831,6 +1021,7 @@ struct RecastNode
     //Main loop
     while (ros::ok())
     {
+
       if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_ || newMapReceived_)
       {
         // Clear previous Rviz Markers
@@ -882,8 +1073,7 @@ struct RecastNode
 
         if (recast_.drawRecastGraph(graphNodes_))
         {
-          graphNodeList_.points.clear();
-          graphNodeList_.colors.clear();
+          graphNodeList_.markers.clear();
 
           graphConnectionList_.points.clear();
           graphConnectionList_.colors.clear();
@@ -894,6 +1084,8 @@ struct RecastNode
         // Create Rviz Markers based on new navigation mesh
         buildNavMeshVisualization(pclNavMeshCloud, areaList);
         buildRecastGraphVisualization();
+        interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("menu", "", false));
+        makeMenuMarker();
         // clear update requirement flag
         updateMeshCheck_ = false;
         obstacleAdded_ = false;
@@ -950,6 +1142,12 @@ struct RecastNode
         {
           ROS_INFO("Published Graph Connection No %d", listCount[8]++);
           graphConnectionPub_.publish(graphConnectionList_);
+        }
+        if (RecastPathStartPub_.getNumSubscribers() >= 1)
+        {
+          RecastPathStartPub_.publish(agentStartPos_);
+          RecastPathGoalPub_.publish(agentGoalPos_);
+          RecastPathPub_.publish(pathList_);
         }
         loopCount = 0;
       }
@@ -1013,14 +1211,24 @@ struct RecastNode
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
   bool obstacleRemoved_ = false;
   bool newMapReceived_ = false;
+  bool startSet_ = false;
+  bool goalSet_ = false;
   //Visualization settings
+  interactive_markers::MenuHandler::EntryHandle setStartPos_;
+  interactive_markers::MenuHandler::EntryHandle setGoalPos_;
+  interactive_markers::MenuHandler::EntryHandle deleteObstacle_;
+  interactive_markers::MenuHandler menuHandler_;
+  std::vector<visualization_msgs::InteractiveMarker> intMarkerVec_;
+  std::vector<visualization_msgs::InteractiveMarkerControl> intControlVec_;
+  boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerServer_;
+
   visualization_msgs::Marker navMesh_;
   visualization_msgs::Marker navMeshFiltered_;
   visualization_msgs::Marker navMeshLineList_;
   visualization_msgs::Marker navMeshLineListFiltered_;
   visualization_msgs::Marker orgTriList_;
   visualization_msgs::Marker originalLineList_;
-  visualization_msgs::Marker graphNodeList_;
+  visualization_msgs::MarkerArray graphNodeList_;
   visualization_msgs::Marker graphConnectionList_;
   std::vector<visualization_msgs::Marker> obstacleList_;
   visualization_msgs::Marker pathList_;
