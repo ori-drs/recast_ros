@@ -40,7 +40,7 @@ roslaunch recast_demos recast_node.launch
 roslaunch recast_demos test_input_map.launch
 ```
 
-For the configuration of NavigationMesh you can run:
+For the configuration of NavigationMesh and other parameters regarding to planner you can run:
 
 ```
 rosrun rqt_reconfigure rqt_reconfigure
@@ -50,6 +50,26 @@ and set parameters to desired values.
 
 Dynamic reconfiguring can also be turned off in the recast_node.launch file, in case you prefer to use launch-file parameters instead.
 
+### Interactive RViz GUI:
+
+This package comes with interactive user interface node (recast_node_interactive). 
+
+You can use RViz InteractiveMarkers to,
+
+- Set start position for the agent
+- Set goal position for the agent
+- Add obstacle(s) to desired position
+- Remove all existing obstacles
+- Delete specific obstacle(s)
+
+All the changes made through recast_node_interactive will appear in recast_node RViz window.
+
+#### WARNING:
+
+While using the package, do not visualize InteractiveMarkers with Markers::LINE_LIST or Markers::LINE_STRIP, if you have a NVIDIA graphic card.
+It causes RViz to segfault and crash.
+
+Refer [here](https://github.com/ros-visualization/rviz/issues/1192) for details.
 
 ### Testing path planning service:
 

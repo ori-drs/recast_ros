@@ -59,6 +59,10 @@ struct RecastNode
     nodeHandle_.param("loop_rate", frequency_, 100.0);
     nodeHandle_.param("rviz_marker_loop_rate", rvizFrequency_, 10);
     nodeHandle_.getParam("search_buffer_size", searchBufferSize_);
+    nodeHandle_.getParam("obstacle_radius", obstacleRadius_);
+    nodeHandle_.getParam("obstacle_height", obstacleHeight_);
+
+    colourCheck_.resize(noAreaTypes_, false);
 
     // ROS::Rviz marker publishers
     NavMeshPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("navigation_mesh", 1);
@@ -74,7 +78,8 @@ struct RecastNode
     graphNodePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_nodes", 1);
     graphConnectionPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_connections", 1);
 
-    interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("menu", "", false));
+    interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("navmesh", "", false));
+    interactiveMarkerObstacleServer_.reset(new interactive_markers::InteractiveMarkerServer("obstacles", "", false));
 
     // create colour list for area types
     colourList_ = {
@@ -125,6 +130,22 @@ struct RecastNode
 
     //publishing ratio
     int publishRate_ = frequency_ / rvizFrequency_;
+  }
+  int findAvailableColour()
+  {
+    for (size_t i = 0; i < colourCheck_.size(); i++)
+    {
+      if (colourCheck_[i])
+        continue;
+      else
+      {
+        colourCheck_[i] = true;
+        return i;
+      }
+    }
+
+    ROS_ERROR("All the colours are being used, returning index 0");
+    return 0;
   }
 
   bool inputMeshService(recast_ros::InputMeshSrv::Request &req, recast_ros::InputMeshSrv::Response &res)
@@ -241,10 +262,7 @@ struct RecastNode
     v.scale.z = height;
 
     // Set the color -- be sure to set alpha to something non-zero!
-    v.color.r = 1.0f;
-    v.color.g = 0.0f;
-    v.color.b = 0.0f;
-    v.color.a = 1.0;
+    v.color = colourList_[obstacleColour_];
 
     v.lifetime = ros::Duration();
   }
@@ -289,6 +307,7 @@ struct RecastNode
     ROS_INFO("NavMesh is updated");
     return true;
   }
+
   void buildOriginalMeshVisualization(pcl::PointCloud<pcl::PointXYZ>::Ptr pclCloud)
   {
     geometry_msgs::Point p;
@@ -321,6 +340,7 @@ struct RecastNode
         p.z = pclCloud->points[id].z;
 
         orgTriList_.colors[3 * i + j] = colourList_[areaLabels_[i]];
+        colourCheck_[areaLabels_[i]] = true;
         orgTriList_.points[3 * i + j] = p;
       }
       originalLineList_.points[6 * i + 0] = orgTriList_.points[3 * i + 0];
@@ -383,6 +403,8 @@ struct RecastNode
         p.z = pclCloud->points[id].z;
 
         navMesh_.colors.push_back(colourList_[trilabels[id]]);
+        colourCheck_[trilabels[id]] = true;
+
         navMesh_.points.push_back(p);
 
         startFunc = ros::WallTime::now();
@@ -525,9 +547,9 @@ struct RecastNode
     recast_.clearAllRecastObstacles();
     res.success = true;
     res.message = "Obstacles are removed";
-    obstacleRemoved_ = true;
+    allObstaclesRemoved_ = true;
 
-    return obstacleRemoved_;
+    return allObstaclesRemoved_;
   }
   // dynamic reconfiguration, update node parameters and class' private variables. WARNING: COST & Frequency updates don't require NavMesh Update
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level)
@@ -602,6 +624,8 @@ struct RecastNode
       frequency_ = config.loop_rate;
       rvizFrequency_ = config.rviz_marker_loop_rate;
       publishRate_ = frequency_ / rvizFrequency_;
+      obstacleRadius_ = config.obstacle_radius;
+      obstacleHeight_ = config.obstacle_height;
 
       loopRate_ = ros::Rate(frequency_);
     }
@@ -783,6 +807,9 @@ struct RecastNode
     agentGoalPos_.color.g = 0.0;
     agentGoalPos_.color.b = 0.0;
 
+    RecastPathStartPub_.publish(agentStartPos_);
+    RecastPathGoalPub_.publish(agentGoalPos_);
+
     // query recast/detour for the path
     pathStart = ros::WallTime::now();
     bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_, noPolygons_);
@@ -842,6 +869,7 @@ struct RecastNode
     p.y = path[path.size() - 1].y;
     p.z = path[path.size() - 1].z + agentHeight_ / 2.0;
     pathList_.points[pathList_.points.size() - 1] = p;
+    RecastPathPub_.publish(pathList_);
 
     endFunc = ros::WallTime::now();
 
@@ -873,24 +901,46 @@ struct RecastNode
     res.area_type.data = (char)areaType;
     return true;
   }
-  void makeMenuMarker()
+  //Interactive markers for triangles
+  void pathPlannerMenu()
   {
-    visualization_msgs::InteractiveMarker intMarker_;
-    visualization_msgs::InteractiveMarkerControl intControl_;
+    visualization_msgs::InteractiveMarker intMarker;
+    visualization_msgs::InteractiveMarkerControl intControl;
 
-    intControl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-    intControl_.always_visible = true;
-    intMarker_.scale = 0.2;
-    intMarker_.header.frame_id = "map";
+    intControl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+    intControl.always_visible = true;
+    intMarker.scale = 0.2;
+    intMarker.header.frame_id = "map";
 
-    intMarker_.name = navMeshFiltered_.ns + "Interactive";
-    intControl_.markers.push_back(navMeshFiltered_);
-    intMarker_.controls.push_back(intControl_);
-    interactiveMarkerServer_->insert(intMarker_);
+    intMarker.name = navMeshFiltered_.ns + "Interactive";
+    intControl.markers.push_back(navMeshFiltered_);
+    intMarker.controls.push_back(intControl);
+    interactiveMarkerServer_->insert(intMarker);
 
     menuHandler_.apply(*interactiveMarkerServer_, navMeshFiltered_.ns + "Interactive");
-
     interactiveMarkerServer_->applyChanges();
+  }
+  //Interactive markers for obstacles
+  void obstaclePlannerMenu()
+  {
+    visualization_msgs::InteractiveMarker intMarker;
+    visualization_msgs::InteractiveMarkerControl intControl;
+
+    for (size_t i = 0; i < obstacleList_.size(); i++)
+    {
+      intControl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      intControl.always_visible = true;
+      intMarker.scale = 0.2;
+      intMarker.header.frame_id = "map";
+
+      intMarker.name = obstacleList_[i].ns + "Interactive";
+      intControl.markers.push_back(obstacleList_[i]);
+      intMarker.controls.push_back(intControl);
+      interactiveMarkerObstacleServer_->insert(intMarker);
+
+      menuHandlerObs_.apply(*interactiveMarkerObstacleServer_, obstacleList_[i].ns + "Interactive");
+    }
+    interactiveMarkerObstacleServer_->applyChanges();
   }
 
   void setStart(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
@@ -919,10 +969,86 @@ struct RecastNode
       findPathPlanner();
     }
   }
+  //Menu option to delete all obstacles
+  void removeAllObstaclesMenu(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  {
+    recast_.clearAllRecastObstacles();
+    allObstaclesRemoved_ = true;
+  }
+  //Menu option to delete specific obstacle
+  void deleteObstaclePlanner(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  {
+    float hitPos[3], actualPos[3];
+    hitPos[0] = feedback->mouse_point.x;
+    hitPos[1] = feedback->mouse_point.y;
+    hitPos[2] = feedback->mouse_point.z;
+
+    std::vector<visualization_msgs::Marker>::iterator temp = obstacleList_.begin();
+
+    for (unsigned int i = 0; i < obstacleList_.size() && !obstacleRemoved_; ++i)
+    {
+      //Tolerance values for check obstacle position within range of clicking
+      float tolX = obstacleList_[i].scale.x / 2.0f + 0.1f;
+      float tolY = obstacleList_[i].scale.y / 2.0f + 0.1f;
+      float tolZ = obstacleList_[i].scale.z;
+
+      if (fabs(obstacleList_[i].pose.position.x - hitPos[0]) <= tolX &&
+          fabs(obstacleList_[i].pose.position.y - hitPos[1]) <= tolY &&
+          fabs(obstacleList_[i].pose.position.z - hitPos[2]) <= tolZ)
+      {
+        //Gets actualPosition of obstacle marker (centre of cylinder)
+        actualPos[0] = obstacleList_[i].pose.position.x;
+        actualPos[1] = obstacleList_[i].pose.position.y;
+        actualPos[2] = obstacleList_[i].pose.position.z - obstacleList_[i].scale.z / 2; // see visualizeObstacle for the reason of substraction
+        obstacleList_[i].action = visualization_msgs::Marker::DELETE;
+        RecastObstaclePub_.publish(obstacleList_[i]);
+
+        obstacleList_.erase(temp);
+        obstacleRemoved_ = true;
+      }
+      temp++;
+    }
+
+    recast_.removeRecastObstacle(actualPos);
+    recast_.update();
+
+    ROS_WARN("Obstacle at %f %f %f is deleted", actualPos[0], actualPos[1], actualPos[2]);
+  }
+  //Menu option to add obstacles
+  void addObstaclePlanner(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  {
+    float hitPos[3];
+    hitPos[0] = feedback->mouse_point.x;
+    hitPos[1] = feedback->mouse_point.y;
+    hitPos[2] = feedback->mouse_point.z;
+
+    visualization_msgs::Marker newMarker;
+
+    obstacleAdded_ = recast_.addRecastObstacle(hitPos, obstacleRadius_, obstacleHeight_);
+
+    if (obstacleAdded_)
+    {
+      ROS_WARN("Obstacle at %f %f %f is added", hitPos[0], hitPos[1], hitPos[2]);
+      visualizeObstacle(newMarker, hitPos, (int)obstacleList_.size(), obstacleRadius_, obstacleHeight_);
+
+      obstacleList_.push_back(newMarker);
+      recast_.update();
+    }
+    else
+    {
+      ROS_ERROR("Obstacle adding is failed");
+    }
+  }
+
+  //Drop down menu for interactive markers
+  //Triangles are handled by menuHandler_, obstacles are handled by menuHandlerObs_
   void initMenu()
   {
     setStartPos_ = menuHandler_.insert("Set Start Position", boost::bind(&RecastNode::setStart, this, _1));
     setGoalPos_ = menuHandler_.insert("Set Goal Position", boost::bind(&RecastNode::setGoal, this, _1));
+    addObstacle_ = menuHandler_.insert("Add Obstacle", boost::bind(&RecastNode::addObstaclePlanner, this, _1));
+    removeAllObstacles_ = menuHandler_.insert("Remove All Obstacles", boost::bind(&RecastNode::removeAllObstaclesMenu, this, _1));
+    deleteObstacle_ = menuHandlerObs_.insert("Delete Obstacle", boost::bind(&RecastNode::deleteObstaclePlanner, this, _1));
   }
 
   void run()
@@ -962,9 +1088,12 @@ struct RecastNode
     setVisualParameters(graphNodeList_, visualization_msgs::Marker::SPHERE_LIST, "Graph Nodes", 15);
     setVisualParameters(graphConnectionList_, visualization_msgs::Marker::LINE_LIST, "Graph Connections", 16);
 
+    buildOriginalMeshVisualization(pclOriginalCloud);
+    //Assigns first available colour to obstacles
+    obstacleColour_ = findAvailableColour();
+
     /*     //Builds initial Mesh Visualization
     buildNavMeshVisualization(pclNavMeshCloud, areaList);
-    buildOriginalMeshVisualization(pclOriginalCloud);
     buildRecastGraphVisualization();
  */
     // infinite loop
@@ -978,7 +1107,7 @@ struct RecastNode
     while (ros::ok())
     {
 
-      if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_ || newMapReceived_)
+      if (updateMeshCheck_ || obstacleAdded_ || obstacleRemoved_ || newMapReceived_ || allObstaclesRemoved_)
       {
         // Clear previous Rviz Markers
         navMesh_.points.clear();
@@ -1011,8 +1140,9 @@ struct RecastNode
           RecastObstaclePub_.publish(deleteMark);
           graphConnectionPub_.publish(deleteMark);
           graphNodePub_.publish(deleteMark);
+          colourCheck_.resize(noAreaTypes_, false);
         }
-        if (obstacleRemoved_)
+        if (allObstaclesRemoved_)
         {
           //Clear Obstacles' Markers
           obstacleList_.clear();
@@ -1041,13 +1171,19 @@ struct RecastNode
         // Create Rviz Markers based on new navigation mesh
         buildNavMeshVisualization(pclNavMeshCloud, areaList);
         buildRecastGraphVisualization();
-        interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("menu", "", false));
-        makeMenuMarker();
+        //updates interactive markers' menu
+        interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("navmesh", "", false));
+        pathPlannerMenu();
+        interactiveMarkerObstacleServer_.reset(new interactive_markers::InteractiveMarkerServer("obstacles", "", false));
+        if (obstacleAdded_ || obstacleRemoved_ || allObstaclesRemoved_)
+          obstaclePlannerMenu();
+
         // clear update requirement flag
         updateMeshCheck_ = false;
         obstacleAdded_ = false;
-        newMapReceived_ = false;
         obstacleRemoved_ = false;
+        newMapReceived_ = false;
+        allObstaclesRemoved_ = false;
         loopCount = 0;
       }
 
@@ -1099,12 +1235,6 @@ struct RecastNode
         {
           ROS_INFO("Published Graph Connection No %d", listCount[8]++);
           graphConnectionPub_.publish(graphConnectionList_);
-        }
-        if (RecastPathStartPub_.getNumSubscribers() >= 1)
-        {
-          RecastPathStartPub_.publish(agentStartPos_);
-          RecastPathGoalPub_.publish(agentGoalPos_);
-          RecastPathPub_.publish(pathList_);
         }
         loopCount = 0;
       }
@@ -1158,8 +1288,13 @@ struct RecastNode
   double agentRadius_;
   double agentMaxClimb_;
   double agentMaxSlope_;
-  const int noAreaTypes_; // Number of Area Types
-  int searchBufferSize_;  // Search nodePool buffer size
+  //Default obstacle parameters
+  double obstacleRadius_;
+  double obstacleHeight_;
+  int obstacleColour_;
+  // Number of Area Types
+  const int noAreaTypes_;
+  int searchBufferSize_; // Search nodePool buffer size
   bool dynamicReconfigure_;
   std::vector<float> areaCostList_;
   std::vector<char> areaLabels_;
@@ -1167,6 +1302,7 @@ struct RecastNode
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
   bool obstacleRemoved_ = false;
+  bool allObstaclesRemoved_ = false;
   bool newMapReceived_ = false;
   bool startSet_ = false;
   bool goalSet_ = false;
@@ -1174,10 +1310,15 @@ struct RecastNode
   interactive_markers::MenuHandler::EntryHandle setStartPos_;
   interactive_markers::MenuHandler::EntryHandle setGoalPos_;
   interactive_markers::MenuHandler::EntryHandle deleteObstacle_;
+  interactive_markers::MenuHandler::EntryHandle addObstacle_;
+  interactive_markers::MenuHandler::EntryHandle removeAllObstacles_;
+
   interactive_markers::MenuHandler menuHandler_;
+  interactive_markers::MenuHandler menuHandlerObs_;
   std::vector<visualization_msgs::InteractiveMarker> intMarkerVec_;
   std::vector<visualization_msgs::InteractiveMarkerControl> intControlVec_;
   boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerServer_;
+  boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerObstacleServer_;
 
   visualization_msgs::Marker navMesh_;
   visualization_msgs::Marker navMeshFiltered_;
@@ -1192,6 +1333,8 @@ struct RecastNode
   visualization_msgs::Marker agentStartPos_;
   visualization_msgs::Marker agentGoalPos_;
   std::vector<std_msgs::ColorRGBA> colourList_;
+  //Stores unused colours wrt to indexes
+  std::vector<bool> colourCheck_;
 };
 
 int main(int argc, char *argv[])

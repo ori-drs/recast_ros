@@ -176,6 +176,18 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
 }
 //Assume cylindrical obstacle
 //WARNING ! Each operation regarding to Obstacles requires a map update afterwards
+//Removes obstacle from the clicked position pos
+void RecastPlanner::removeRecastObstacle(const float *pos)
+{
+  float hitTime;
+  float rayStart[3], rayEnd[3];
+  bool hit = geom->raycastMesh(rayStart, rayEnd, hitTime);
+  // Convert ROS Axes | Recast Axes
+  float x[3] = {pos[0], pos[2], -pos[1]};
+
+  sample->removeTempObstacle(rayStart, x);
+}
+
 bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
 {
   // Convert ROS Axes | Recast Axes

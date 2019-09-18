@@ -1165,7 +1165,8 @@ dtStatus MySampleObstacles::addTempObstacle(const float *pos, const float &radi,
 	float p[3];
 	dtVcopy(p, pos);
 	p[1] -= 0.5f;
-	dtStatus res = m_tileCache->addObstacle(p, radi, height, 0);
+	dtObstacleRef ref;
+	dtStatus res = m_tileCache->addObstacle(p, radi, height, &ref);
 
 	return res;
 }
@@ -1360,7 +1361,6 @@ bool MySampleObstacles::handleBuild(const std::vector<char> &areaTypes, const in
 void MySampleObstacles::handleUpdate(const float dt)
 {
 	Sample::handleUpdate(dt);
-	printf("MySampleObstacles Update\n");
 
 	if (!m_navMesh)
 		return;
@@ -1372,9 +1372,6 @@ void MySampleObstacles::handleUpdate(const float dt)
 
 	while (!check)
 		result = m_tileCache->update(dt, m_navMesh, &check);
-
-	if (result == DT_SUCCESS)
-		printf("Update achieved");
 }
 
 void MySampleObstacles::getTilePos(const float *pos, int &tx, int &ty)

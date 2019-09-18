@@ -174,6 +174,7 @@ public:
 	virtual void handleUpdate(const float dt);
 	virtual void collectSettings(struct BuildSettings &settings);
 	virtual dtStatus addTempObstacle(const float *pos, const float &radi, const float &height) = 0;
+	virtual void removeTempObstacle(const float *pos, const float* sq) = 0;
 	virtual void clearAllTempObstacles() = 0;
 
 	virtual class InputGeom *getInputGeom() { return m_geom; }
