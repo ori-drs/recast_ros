@@ -40,6 +40,8 @@ roslaunch recast_demos recast_node.launch
 roslaunch recast_demos test_input_map.launch
 ```
 
+### Reconfiguration of RecastPlanner
+
 For the configuration of NavigationMesh and other parameters regarding to planner you can run:
 
 ```
@@ -49,6 +51,15 @@ rosrun rqt_reconfigure rqt_reconfigure
 and set parameters to desired values.
 
 Dynamic reconfiguring can also be turned off in the recast_node.launch file, in case you prefer to use launch-file parameters instead.
+
+In this case you can run:
+
+```
+rosparam set /recast_node/param_name param_value
+rosrun recast_ros test_update_parameters
+```
+
+This will update both configuration parameters and ros parameters. Mesh will be updated, if one of the mesh parameters is changed.
 
 ### Interactive RViz GUI:
 

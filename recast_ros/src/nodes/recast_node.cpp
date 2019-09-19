@@ -58,9 +58,9 @@ struct RecastNode
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
     nodeHandle_.param("rviz_marker_loop_rate", rvizFrequency_, 10);
-    nodeHandle_.getParam("search_buffer_size", searchBufferSize_);
-    nodeHandle_.getParam("obstacle_radius", obstacleRadius_);
-    nodeHandle_.getParam("obstacle_height", obstacleHeight_);
+    nodeHandle_.param("search_buffer_size", searchBufferSize_, 10240);
+    nodeHandle_.param("obstacle_radius", obstacleRadius_, 0.5);
+    nodeHandle_.param("obstacle_height", obstacleHeight_, 1.0);
 
     colourCheck_.resize(noAreaTypes_, false);
 
@@ -112,6 +112,7 @@ struct RecastNode
     serviceProject_ = nodeHandle_.advertiseService("project_point", &RecastNode::projectPointService, this);
     serviceAddObstacle_ = nodeHandle_.advertiseService("add_obstacle", &RecastNode::addObstacleService, this);
     serviceRemoveAllObstacles_ = nodeHandle_.advertiseService("remove_all_obstacles", &RecastNode::removeAllObstacles, this);
+    serviceUpdateMesh_ = nodeHandle_.advertiseService("test_update_parameters", &RecastNode::updateMeshRosParam, this);
     serviceInputMap_ = nodeHandle_.advertiseService("input_mesh", &RecastNode::inputMeshService, this);
 
     //Create ROS::params for area costs
@@ -144,7 +145,7 @@ struct RecastNode
       }
     }
 
-    ROS_ERROR("All the colours are being used, returning index 0");
+    ROS_WARN("All the colours are being used, returning index 0");
     return 0;
   }
 
@@ -267,22 +268,8 @@ struct RecastNode
     v.lifetime = ros::Duration();
   }
 
-  bool updateNavMesh() // Update NavMesh settings from dynamic rqt_reconfiguration
+  bool updateNavMesh() // Update NavMesh settings from dynamic rqt_reconfiguration or from rosparam set ... command
   {
-    nodeHandle_.setParam("cell_size", cellSize_);
-    nodeHandle_.setParam("cell_height", cellHeight_);
-    nodeHandle_.setParam("agent_height", agentHeight_);
-    nodeHandle_.setParam("agent_radius", agentRadius_);
-    nodeHandle_.setParam("agent_max_climb", agentMaxClimb_);
-    nodeHandle_.setParam("agent_max_slope", agentMaxSlope_);
-
-    std::string temp = "TERRAIN_TYPE", temp1 = "";
-
-    for (size_t i = 1; i < noAreaTypes_; i++)
-    {
-      temp1 = temp + boost::to_string(i) + "_COST";
-      nodeHandle_.setParam(temp1, areaCostList_[i]);
-    }
 
     recast_.stg.cellSize = cellSize_;
     recast_.stg.cellHeight = cellHeight_;
@@ -551,6 +538,68 @@ struct RecastNode
 
     return allObstaclesRemoved_;
   }
+  bool updateMeshRosParam(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+  {
+    //previous mesh config
+    double prev[6] = {cellSize_, cellHeight_, agentHeight_, agentRadius_, agentMaxClimb_, agentMaxSlope_};
+
+    if (nodeHandle_.hasParam("cell_size"))
+      nodeHandle_.getParam("cell_size", cellSize_);
+    if (nodeHandle_.hasParam("cell_height"))
+      nodeHandle_.getParam("cell_height", cellHeight_);
+    if (nodeHandle_.hasParam("agent_height"))
+      nodeHandle_.getParam("agent_height", agentHeight_);
+    if (nodeHandle_.hasParam("agent_radius"))
+      nodeHandle_.getParam("agent_radius", agentRadius_);
+    if (nodeHandle_.hasParam("agent_max_climb"))
+      nodeHandle_.getParam("agent_max_climb", agentMaxClimb_);
+    if (nodeHandle_.hasParam("agent_max_slope"))
+      nodeHandle_.getParam("agent_max_slope", agentMaxSlope_);
+    if (nodeHandle_.hasParam("loop_rate"))
+      nodeHandle_.getParam("loop_rate", frequency_);
+    if (nodeHandle_.hasParam("rviz_marker_loop_rate"))
+      nodeHandle_.getParam("rviz_marker_loop_rate", rvizFrequency_);
+    if (nodeHandle_.hasParam("search_buffer_size"))
+      nodeHandle_.getParam("search_buffer_size", searchBufferSize_);
+    if (nodeHandle_.hasParam("obstacle_radius"))
+      nodeHandle_.getParam("obstacle_radius", obstacleRadius_);
+    if (nodeHandle_.hasParam("obstacle_height"))
+      nodeHandle_.getParam("obstacle_height", obstacleHeight_);
+
+    std::string temp = "TERRAIN_TYPE", temp1 = "";
+
+    //Create ROS::params for area costs
+    for (size_t i = 1; i < noAreaTypes_; i++)
+    {
+      temp1 = temp + boost::to_string(i) + "_COST";
+      if (nodeHandle_.hasParam(temp1))
+        nodeHandle_.getParam(temp1, areaCostList_[i]);
+    }
+
+    publishRate_ = frequency_ / rvizFrequency_;
+
+    res.success = true;
+    res.message = "Parameters are being updated";
+    // update is required only if mesh parameters are changed
+    if (cellSize_ != prev[0] ||
+        cellHeight_ != prev[1] ||
+        agentHeight_ != prev[2] ||
+        agentRadius_ != prev[3] ||
+        agentMaxClimb_ != prev[4] ||
+        agentMaxSlope_ != prev[5])
+    {
+      ROS_INFO("Reconfigure Request: %f %f %f %f %f, %f",
+               cellSize_,
+               cellHeight_,
+               agentHeight_,
+               agentRadius_,
+               agentMaxClimb_,
+               agentMaxSlope_);
+      updateMeshCheck_ = true;
+    }
+
+    return true;
+  }
   // dynamic reconfiguration, update node parameters and class' private variables. WARNING: COST & Frequency updates don't require NavMesh Update
   void callbackNavMesh(recast_ros::recast_nodeConfig &config, uint32_t level)
   {
@@ -572,63 +621,84 @@ struct RecastNode
                config.agent_max_slope);
 
       cellSize_ = config.cell_size;
+      nodeHandle_.setParam("cell_size", cellSize_);
+
       cellHeight_ = config.cell_height;
+      nodeHandle_.setParam("cell_height", cellHeight_);
+
       agentHeight_ = config.agent_height;
+      nodeHandle_.setParam("agent_height", agentHeight_);
+
       agentRadius_ = config.agent_radius;
+      nodeHandle_.setParam("agent_radius", agentRadius_);
+
       agentMaxClimb_ = config.agent_max_climb;
+      nodeHandle_.setParam("agent_max_climb", agentMaxClimb_);
+
       agentMaxSlope_ = config.agent_max_slope;
+      nodeHandle_.setParam("agent_max_slope", agentMaxSlope_);
 
       updateMeshCheck_ = true;
     }
-    else
+
+    if (areaCostList_.size() > 1)
+      areaCostList_[1] = config.TERRAIN_TYPE1_COST;
+    if (areaCostList_.size() > 2)
+      areaCostList_[2] = config.TERRAIN_TYPE2_COST;
+    if (areaCostList_.size() > 3)
+      areaCostList_[3] = config.TERRAIN_TYPE3_COST;
+    if (areaCostList_.size() > 4)
+      areaCostList_[4] = config.TERRAIN_TYPE4_COST;
+    if (areaCostList_.size() > 5)
+      areaCostList_[5] = config.TERRAIN_TYPE5_COST;
+    if (areaCostList_.size() > 6)
+      areaCostList_[6] = config.TERRAIN_TYPE6_COST;
+    if (areaCostList_.size() > 7)
+      areaCostList_[7] = config.TERRAIN_TYPE7_COST;
+    if (areaCostList_.size() > 8)
+      areaCostList_[8] = config.TERRAIN_TYPE8_COST;
+    if (areaCostList_.size() > 9)
+      areaCostList_[9] = config.TERRAIN_TYPE9_COST;
+    if (areaCostList_.size() > 10)
+      areaCostList_[10] = config.TERRAIN_TYPE10_COST;
+    if (areaCostList_.size() > 11)
+      areaCostList_[11] = config.TERRAIN_TYPE11_COST;
+    if (areaCostList_.size() > 12)
+      areaCostList_[12] = config.TERRAIN_TYPE12_COST;
+    if (areaCostList_.size() > 13)
+      areaCostList_[13] = config.TERRAIN_TYPE13_COST;
+    if (areaCostList_.size() > 14)
+      areaCostList_[14] = config.TERRAIN_TYPE14_COST;
+    if (areaCostList_.size() > 15)
+      areaCostList_[15] = config.TERRAIN_TYPE15_COST;
+    if (areaCostList_.size() > 16)
+      areaCostList_[16] = config.TERRAIN_TYPE16_COST;
+    if (areaCostList_.size() > 17)
+      areaCostList_[17] = config.TERRAIN_TYPE17_COST;
+    if (areaCostList_.size() > 18)
+      areaCostList_[18] = config.TERRAIN_TYPE18_COST;
+    if (areaCostList_.size() > 19)
+      areaCostList_[19] = config.TERRAIN_TYPE19_COST;
+
+    std::string temp = "TERRAIN_TYPE", temp1 = "";
+
+    for (size_t i = 1; i < noAreaTypes_; i++)
     {
-      if (areaCostList_.size() > 1)
-        areaCostList_[1] = config.TERRAIN_TYPE1_COST;
-      if (areaCostList_.size() > 2)
-        areaCostList_[2] = config.TERRAIN_TYPE2_COST;
-      if (areaCostList_.size() > 3)
-        areaCostList_[3] = config.TERRAIN_TYPE3_COST;
-      if (areaCostList_.size() > 4)
-        areaCostList_[4] = config.TERRAIN_TYPE4_COST;
-      if (areaCostList_.size() > 5)
-        areaCostList_[5] = config.TERRAIN_TYPE5_COST;
-      if (areaCostList_.size() > 6)
-        areaCostList_[6] = config.TERRAIN_TYPE6_COST;
-      if (areaCostList_.size() > 7)
-        areaCostList_[7] = config.TERRAIN_TYPE7_COST;
-      if (areaCostList_.size() > 8)
-        areaCostList_[8] = config.TERRAIN_TYPE8_COST;
-      if (areaCostList_.size() > 9)
-        areaCostList_[9] = config.TERRAIN_TYPE9_COST;
-      if (areaCostList_.size() > 10)
-        areaCostList_[10] = config.TERRAIN_TYPE10_COST;
-      if (areaCostList_.size() > 11)
-        areaCostList_[11] = config.TERRAIN_TYPE11_COST;
-      if (areaCostList_.size() > 12)
-        areaCostList_[12] = config.TERRAIN_TYPE12_COST;
-      if (areaCostList_.size() > 13)
-        areaCostList_[13] = config.TERRAIN_TYPE13_COST;
-      if (areaCostList_.size() > 14)
-        areaCostList_[14] = config.TERRAIN_TYPE14_COST;
-      if (areaCostList_.size() > 15)
-        areaCostList_[15] = config.TERRAIN_TYPE15_COST;
-      if (areaCostList_.size() > 16)
-        areaCostList_[16] = config.TERRAIN_TYPE16_COST;
-      if (areaCostList_.size() > 17)
-        areaCostList_[17] = config.TERRAIN_TYPE17_COST;
-      if (areaCostList_.size() > 18)
-        areaCostList_[18] = config.TERRAIN_TYPE18_COST;
-      if (areaCostList_.size() > 19)
-        areaCostList_[19] = config.TERRAIN_TYPE19_COST;
-
-      frequency_ = config.loop_rate;
-      rvizFrequency_ = config.rviz_marker_loop_rate;
-      publishRate_ = frequency_ / rvizFrequency_;
-      obstacleRadius_ = config.obstacle_radius;
-      obstacleHeight_ = config.obstacle_height;
-
-      loopRate_ = ros::Rate(frequency_);
+      temp1 = temp + boost::to_string(i) + "_COST";
+      nodeHandle_.setParam(temp1, areaCostList_[i]);
     }
+
+    frequency_ = config.loop_rate;
+    nodeHandle_.setParam("loop_rate", frequency_);
+    rvizFrequency_ = config.rviz_marker_loop_rate;
+    nodeHandle_.setParam("rviz_marker_loop_rate", rvizFrequency_);
+    publishRate_ = frequency_ / rvizFrequency_;
+    obstacleRadius_ = config.obstacle_radius;
+    nodeHandle_.setParam("obstacle_radius", obstacleRadius_);
+    obstacleHeight_ = config.obstacle_height;
+    nodeHandle_.setParam("obstacle_height", obstacleHeight_);
+
+    loopRate_ = ros::Rate(frequency_);
   }
 
   bool findPathService(recast_ros::RecastPathSrv::Request &req, recast_ros::RecastPathSrv::Response &res)
@@ -1067,13 +1137,10 @@ struct RecastNode
     std::vector<Eigen::Vector3d> lineList;
     std::vector<unsigned char> areaList;
 
-    // Dynamic Reconfiguration start
-    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> server;
-    dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType f;
     if (dynamicReconfigure_)
     {
-      f = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
-      server.setCallback(f);
+      dynamicCallback_ = boost::bind(&RecastNode::callbackNavMesh, this, _1, _2);
+      dynamicReconfigureServer_.setCallback(dynamicCallback_);
     }
 
     // Visualization
@@ -1131,7 +1198,7 @@ struct RecastNode
         if (updateMeshCheck_ || newMapReceived_)
         {
           if (!updateNavMesh())
-            ROS_INFO("Map update failed");
+            ROS_ERROR("Map update failed");
 
           //Clear Obstacles' Markers
           obstacleList_.clear();
@@ -1153,7 +1220,7 @@ struct RecastNode
 
         // Get new navigation mesh
         if (!recast_.getNavMesh(pclNavMesh_, pclNavMeshCloud, lineList, areaList, noPolygons_))
-          ROS_INFO("FAILED");
+          ROS_ERROR("GetNavMesh Failed");
         else
           ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
 
@@ -1262,11 +1329,15 @@ struct RecastNode
   ros::Rate loopRate_;
   double frequency_ = 100.0;
   int rvizFrequency_ = 10;
+  // Dynamic Reconfiguration start
+  dynamic_reconfigure::Server<recast_ros::recast_nodeConfig> dynamicReconfigureServer_;
+  dynamic_reconfigure::Server<recast_ros::recast_nodeConfig>::CallbackType dynamicCallback_;
   // ratio between frequency and rvizFrequency
   int publishRate_ = 10;
   ros::ServiceServer servicePlan_;
   ros::ServiceServer serviceAddObstacle_;
   ros::ServiceServer serviceRemoveAllObstacles_;
+  ros::ServiceServer serviceUpdateMesh_;
   ros::ServiceServer serviceProject_;
   ros::ServiceServer serviceInputMap_;
   recast_ros::RecastPlanner recast_;

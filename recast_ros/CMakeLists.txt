@@ -223,6 +223,10 @@ add_executable(test_input_map src/nodes/test_input_map.cpp)
 target_link_libraries(test_input_map recast_ros ${catkin_LIBRARIES})
 add_dependencies(test_input_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(test_update_parameters src/nodes/test_update_parameters.cpp)
+target_link_libraries(test_update_parameters recast_ros ${catkin_LIBRARIES})
+add_dependencies(test_update_parameters ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 #############
 ## Install ##
