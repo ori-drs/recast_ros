@@ -77,7 +77,7 @@ All the changes made through recast_node_interactive will appear in recast_node 
 
 #### WARNING:
 
-While using the package, do not visualize InteractiveMarkers with Markers::LINE_LIST or Markers::LINE_STRIP, if you have a NVIDIA graphic card.
+While using the package, do not visualize InteractiveMarkers with Markers::LINE_LIST or Markers::LINE_STRIP, if you have an NVIDIA graphic card.
 It causes RViz to segfault and crash.
 
 Refer [here](https://github.com/ros-visualization/rviz/issues/1192) for details.
