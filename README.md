@@ -9,6 +9,15 @@ If you use this in your research, please cite:
 > Martim Brandao, Omer Burak Aladag, and Ioannis Havoutis, "**GaitMesh: controller-aware navigation meshes for long-range legged
 locomotion planning in multi-layered environments**", in *ICRA2020* (submitted).
 
+## Features
+
+- Building NavMesh
+- Building filtered NavMesh, reachable triangles from reference point
+- Graph representation of NavMesh
+- Dynamic reconfiguration of Recast and PathPlanner
+- Add/Remove static obstacles
+- PathPlanner for large meshes
+
 
 ## Building
 
@@ -34,6 +43,7 @@ roslaunch recast_demos gridmap_fsc_res5cm.launch
 First run the demo to get an annotated mesh in the data folder (see recast_demos section above).
 If you want to provide your own map as input, then set the "path" and "path_areas" parameters in recast_demos/launch/test_input_map.launch accordingly:
 
+- "reference_point_x", "reference_point_y", "reference_point_z" defines reference point to build filtered NavMesh.
 - "path" is the path to an .obj file with the mesh of your environment.
 - "path_areas" (optional) is the path to a .dat file which is a binary-encoded sequence of char variables representing the area-type of each of the polygons in the .obj file, in the same order.
 
