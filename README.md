@@ -2,6 +2,8 @@
 
 This package is a ROS wrapper for [recastnavigation](https://github.com/recastnavigation/recastnavigation.git). It allows to build and use navigation meshes for path planning, where the meshes can have areas of different types (and costs).
 
+![recast_ros](/image-rviz.png)
+
 If you use this in your research, please cite:
 
 > Martim Brandao, Omer Burak Aladag, and Ioannis Havoutis, "**GaitMesh: controller-aware navigation meshes for long-range legged
@@ -15,6 +17,8 @@ You need to download the original recastnavigation source code:
 cd recast_ros/src
 git clone https://github.com/recastnavigation/recastnavigation.git
 ```
+
+## Usage
 
 ### recast_demos
 
@@ -50,6 +54,8 @@ rosrun rqt_reconfigure rqt_reconfigure
 
 and set parameters to desired values.
 
+![rqt_reconfigure](/image-dynrec.png)
+
 Dynamic reconfiguring can also be turned off in the recast_node.launch file, in case you prefer to use launch-file parameters instead.
 
 In this case you can run:
@@ -72,6 +78,9 @@ You can use RViz InteractiveMarkers to,
 - Add obstacle(s) to desired position
 - Remove all existing obstacles
 - Delete specific obstacle(s)
+
+![menu options](/image-rviz-menu1.png)
+![menu obstacle](/image-rviz-menu2.png)
 
 All the changes made through recast_node_interactive will appear in recast_node RViz window.
 
