@@ -244,8 +244,6 @@ bool Sample::handleBuild(const std::vector<char> &areaTypes, const int &nodeSize
 
 void Sample::handleUpdate(const float dt)
 {
-	printf("Sample Update\n");
-
 	/*if (m_tool)
 		m_tool->handleUpdate(dt);
 	updateToolStates(dt);*/

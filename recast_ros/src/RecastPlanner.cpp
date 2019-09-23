@@ -21,6 +21,7 @@
 #include "Recast.h"
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
+#include "DetourNode.h"
 //#include "NavMeshTesterTool.h"
 #include "DetourCommon.h"
 #include <Eigen/Dense>
@@ -175,6 +176,18 @@ bool RecastPlanner::query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, 
 }
 //Assume cylindrical obstacle
 //WARNING ! Each operation regarding to Obstacles requires a map update afterwards
+//Removes obstacle from the clicked position pos
+void RecastPlanner::removeRecastObstacle(const float *pos)
+{
+  float hitTime;
+  float rayStart[3], rayEnd[3];
+  bool hit = geom->raycastMesh(rayStart, rayEnd, hitTime);
+  // Convert ROS Axes | Recast Axes
+  float x[3] = {pos[0], pos[2], -pos[1]};
+
+  sample->removeTempObstacle(rayStart, x);
+}
+
 bool RecastPlanner::addRecastObstacle(const float *pos, const float &radi, const float &height)
 {
   // Convert ROS Axes | Recast Axes
@@ -256,6 +269,111 @@ bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &pro
 
   return true;
 }
+
+//Same function from NavMeshTesterTool in original recastnavigation
+static void getPolyCenter(const dtNavMesh *navMesh, dtPolyRef ref, float *center)
+{
+  center[0] = 0;
+  center[1] = 0;
+  center[2] = 0;
+
+  const dtMeshTile *tile = 0;
+  const dtPoly *poly = 0;
+  dtStatus status = navMesh->getTileAndPolyByRef(ref, &tile, &poly);
+  if (dtStatusFailed(status))
+    return;
+
+  for (int i = 0; i < (int)poly->vertCount; ++i)
+  {
+    const float *v = &tile->verts[poly->verts[i] * 3];
+    center[0] += v[0];
+    center[1] += v[1];
+    center[2] += v[2];
+  }
+  const float s = 1.0f / poly->vertCount;
+  center[0] *= s;
+  center[1] *= s;
+  center[2] *= s;
+}
+
+//Same function from NavMeshTesterTool in original recastnavigation
+static void getPolyCenter(const dtNavMesh *navMesh, const dtPoly *poly, const dtMeshTile *tile, float *center)
+{
+  center[0] = 0;
+  center[1] = 0;
+  center[2] = 0;
+
+  for (int i = 0; i < (int)poly->vertCount; ++i)
+  {
+    const float *v = &tile->verts[poly->verts[i] * 3];
+    center[0] += v[0];
+    center[1] += v[1];
+    center[2] += v[2];
+  }
+  const float s = 1.0f / poly->vertCount;
+  center[0] *= s;
+  center[1] *= s;
+  center[2] *= s;
+}
+
+//Builds non-directional graph of reachable polygons from reference_point in a circular region with radius searchRadius
+bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes)
+{
+  if (!sample)
+  {
+    ROS_ERROR("SampleObj FAILED");
+    return false;
+  }
+  const dtNavMesh *mesh = sample->getNavMesh();
+  if (!mesh)
+  {
+    ROS_ERROR("dtNavMesh FAILED");
+    return false;
+  }
+
+  // go through all tiles
+
+  if (mesh->getMaxTiles() < 1)
+  {
+    ROS_ERROR("Max tiles are 0");
+    return false;
+  }
+  for (int i = 0; i < mesh->getMaxTiles(); ++i)
+  {
+    const dtMeshTile *tile = mesh->getTile(i);
+    if (!tile->header)
+      continue;
+    for (int i = 0; i < tile->header->polyCount; ++i)
+    {
+      dtPoly *p = &tile->polys[i];
+      dtPolyRef pRef = tile->links[i].ref;
+      if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) // Skip off-mesh links.
+        continue;
+      for (unsigned int j = p->firstLink; j != DT_NULL_LINK; j = tile->links[j].next)
+      {
+        dtPolyRef neighbourRef = tile->links[j].ref;
+        const dtMeshTile *neighbourTile = 0;
+        const dtPoly *neighbourPoly = 0;
+        mesh->getTileAndPolyByRefUnsafe(neighbourRef, &neighbourTile, &neighbourPoly);
+        float c0[3], c1[3];
+
+        getPolyCenter(mesh, neighbourRef, c0);
+        getPolyCenter(mesh, p, tile, c1);
+
+        graphNodes.push_back(c0[0]);
+        graphNodes.push_back(-c0[2]);
+        graphNodes.push_back(c0[1]);
+
+        graphNodes.push_back(c1[0]);
+        graphNodes.push_back(-c1[2]);
+        graphNodes.push_back(c1[1]);
+      }
+    }
+  }
+
+  return true;
+}
+
 //Converts dtNavMesh => pcl::PolygonMesh
 bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const
 {
