@@ -11,13 +11,13 @@ locomotion planning in multi-layered environments**", in *ICRA2020* (submitted).
 
 ## Features
 
-- Building NavMesh
-- Building filtered NavMesh, reachable triangles from reference point
-- Graph representation of NavMesh
-- Dynamic reconfiguration of Recast and PathPlanner
-- Add/Remove static obstacles
-- PathPlanner for large meshes
-
+- Building navigation meshes
+- Fast path planning in navigation meshes (<1ms)
+- Projecting points to a navigation mesh
+- Adding / removing virtual static obstacles
+- Filtering inaccessible triangles given a reference point
+- Visualizing the graph representation of the navigation mesh
+- Dynamic reconfiguration through dynamic_reconfirgure and ros parameters
 
 ## Building
 
