@@ -155,9 +155,9 @@ struct RecastNode
 
     ROS_WARN("New Map is received, building new NavMesh...");
 
-    req.reference_point.x = reference_point_.x;
-    req.reference_point.y = reference_point_.y;
-    req.reference_point.z = reference_point_.z;
+    reference_point_.x = req.reference_point.x;
+    reference_point_.y = req.reference_point.y;
+    reference_point_.z = req.reference_point.z;
 
     pcl_conversions::toPCL(req.input_mesh, pclMesh_);
 
