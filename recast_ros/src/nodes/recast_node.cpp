@@ -494,6 +494,16 @@ struct RecastNode
     startFunc = ros::WallTime::now();
     for (int i = 0; i < nodeSize; i = i + 3)
     {
+      // skip nodes that are not accessible
+      pcl::PointXYZ pt;
+      pt.x = graphNodes_[i];
+      pt.y = graphNodes_[i+1];
+      pt.z = graphNodes_[i+2];
+      std::vector<pcl::PointXYZ> path;
+      if (!recast_.query(reference_point_, pt, path, areaCostList_, noAreaTypes_, noPolygons_))
+        continue;
+
+      // add nodes to visualization list
       p.x = graphNodes_[i];
       p.y = graphNodes_[i + 1];
       p.z = graphNodes_[i + 2] + graphNodeList_.scale.z / 2;
