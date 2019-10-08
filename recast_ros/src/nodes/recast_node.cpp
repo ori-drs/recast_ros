@@ -56,6 +56,7 @@ struct RecastNode
     nodeHandle_.param("agent_max_climb", agentMaxClimb_, 0.41);
     nodeHandle_.param("agent_max_slope", agentMaxSlope_, 60.0);
     nodeHandle_.param("dynamic_reconfigure", dynamicReconfigure_, true);
+    nodeHandle_.param("replan_path", replanPath_, true);
     nodeHandle_.param("loop_rate", frequency_, 100.0);
     nodeHandle_.param("rviz_marker_loop_rate", rvizFrequency_, 10);
     nodeHandle_.param("search_buffer_size", searchBufferSize_, 10240);
@@ -812,7 +813,7 @@ struct RecastNode
     //Add Start Point
     p.x = path[0].x;
     p.y = path[0].y;
-    p.z = path[0].z + agentHeight_ / 2.0;
+    p.z = path[0].z + agentHeight_;
 
     pathList_.scale.x = 0.1;
     pathList_.points[0] = p;
@@ -822,7 +823,7 @@ struct RecastNode
     {
       p.x = path[i].x;
       p.y = path[i].y;
-      p.z = path[i].z + agentHeight_ / 2.0;
+      p.z = path[i].z + agentHeight_;
 
       pathList_.points[j] = p;
       pathList_.points[j + 1] = p;
@@ -831,7 +832,7 @@ struct RecastNode
     //Add End Point
     p.x = path[path.size() - 1].x;
     p.y = path[path.size() - 1].y;
-    p.z = path[path.size() - 1].z + agentHeight_ / 2.0;
+    p.z = path[path.size() - 1].z + agentHeight_;
     pathList_.points[pathList_.points.size() - 1] = p;
 
     //Publish path lines to RViz
@@ -928,7 +929,7 @@ struct RecastNode
     //Add Start Point
     p.x = path[0].x;
     p.y = path[0].y;
-    p.z = path[0].z + agentHeight_ / 2.0;
+    p.z = path[0].z + agentHeight_;
 
     pathList_.scale.x = 0.1;
     pathList_.points[0] = p;
@@ -938,7 +939,7 @@ struct RecastNode
     {
       p.x = path[i].x;
       p.y = path[i].y;
-      p.z = path[i].z + agentHeight_ / 2.0;
+      p.z = path[i].z + agentHeight_;
 
       pathList_.points[j] = p;
       pathList_.points[j + 1] = p;
@@ -947,7 +948,7 @@ struct RecastNode
     //Add End Point
     p.x = path[path.size() - 1].x;
     p.y = path[path.size() - 1].y;
-    p.z = path[path.size() - 1].z + agentHeight_ / 2.0;
+    p.z = path[path.size() - 1].z + agentHeight_;
     pathList_.points[pathList_.points.size() - 1] = p;
     RecastPathPub_.publish(pathList_);
 
@@ -1264,6 +1265,13 @@ struct RecastNode
         loopCount = 0;
       }
 
+      // re-plan last path
+      if (replanPath_ && startSet_ && goalSet_)
+      {
+        findPathPlanner();
+      }
+
+      // publish things in this cycle?
       if (loopCount % publishRate_ == 0)
       {
         // Publish lists
@@ -1377,6 +1385,7 @@ struct RecastNode
   const int noAreaTypes_;
   int searchBufferSize_; // Search nodePool buffer size
   bool dynamicReconfigure_;
+  bool replanPath_;
   std::vector<float> areaCostList_;
   std::vector<char> areaLabels_;
   std::vector<float> graphNodes_;

@@ -43,6 +43,7 @@ freely, subject to the following restrictions:
     <param name="obstacle_radius" value="0.5" />
     <param name="obstacle_height" value="1.0" />
     <param name="dynamic_reconfigure" value="true" />
+    <param name="replan_path" value="true" />
 
     <param name="TERRAIN_TYPE1_COST" value="1.0f" />
     <param name="TERRAIN_TYPE2_COST" value="1.0f" />
