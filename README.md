@@ -29,19 +29,14 @@ git clone https://github.com/recastnavigation/recastnavigation.git
 
 ## Usage
 
-### recast_demos
+### Get an annotated triangular mesh
 
-- Download https://drive.google.com/open?id=1i2Hkel-Nji3Zl0EdBjMIGzrxW9aALfRy
-- Place it under the data folder.
-- Then run the following:
-```
-roslaunch recast_demos gridmap_fsc_res5cm.launch
-```
+If you want to use our pipeline for legged robot locomotion, you should clone, compile and follow the instructions in the [gaitmesh](https://github.com/ori-drs/gaitmesh) repository to get an annotated triangular mesh.
 
 ### Input mesh service to recast_node:
 
-First run the demo to get an annotated mesh in the data folder (see recast_demos section above).
-If you want to provide your own map as input, then set the "path" and "path_areas" parameters in recast_demos/launch/test_input_map.launch accordingly:
+First get a triangular mesh, either through gaitmesh (as above) or your own method.
+In the latter case, set the "path" and "path_areas" parameters in recast_demos/launch/test_input_map.launch accordingly:
 
 - "reference_point_x", "reference_point_y", "reference_point_z" defines reference point to build filtered NavMesh.
 - "path" is the path to an .obj file with the mesh of your environment.
