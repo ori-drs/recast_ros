@@ -75,7 +75,7 @@ struct RecastNode
     RecastPathPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_lines", 1);
     RecastPathStartPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_start", 1);
     RecastPathGoalPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_path_goal", 1);
-    RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_obstacles", 1);
+    RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::MarkerArray>("recast_obstacles", 1);
     graphNodePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_nodes", 1);
     graphConnectionPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_connections", 1);
 
@@ -1082,14 +1082,13 @@ struct RecastNode
         actualPos[1] = obstacleList_[i].pose.position.y;
         actualPos[2] = obstacleList_[i].pose.position.z - obstacleList_[i].scale.z / 2; // see visualizeObstacle for the reason of substraction
         obstacleList_[i].action = visualization_msgs::Marker::DELETE;
-        RecastObstaclePub_.publish(obstacleList_[i]);
 
         obstacleList_.erase(temp);
         obstacleRemoved_ = true;
       }
       temp++;
     }
-
+    RecastObstaclePub_.publish(obstacleList_);
     recast_.removeRecastObstacle(actualPos);
     recast_.update();
 
@@ -1212,10 +1211,13 @@ struct RecastNode
             ROS_ERROR("Map update failed");
 
           //Clear Obstacles' Markers
-          obstacleList_.clear();
+          std::vector<visualization_msgs::Marker> deleteMarkers(obstacleList_.size());
+          for(auto& marker : deleteMarkers)
+            marker.action = visualization_msgs::Marker::DELETEALL;
           visualization_msgs::Marker deleteMark;
-          deleteMark.action = visualization_msgs::Marker::DELETEALL;
-          RecastObstaclePub_.publish(deleteMark);
+          deleteMark.action = visualization_msgs::Marker::DELETEALL;  
+          RecastObstaclePub_.publish(deleteMarkers);
+          obstacleList_.clear();  
           graphConnectionPub_.publish(deleteMark);
           graphNodePub_.publish(deleteMark);
           colourCheck_.resize(noAreaTypes_, false);
@@ -1223,10 +1225,12 @@ struct RecastNode
         if (allObstaclesRemoved_)
         {
           //Clear Obstacles' Markers
+          std::vector<visualization_msgs::Marker> deleteMarkers(obstacleList_.size());
+          for(auto& marker : deleteMarkers)
+            marker.action = visualization_msgs::Marker::DELETEALL;
+          RecastObstaclePub_.publish(deleteMarkers);  
           obstacleList_.clear();
-          visualization_msgs::Marker deleteMark;
-          deleteMark.action = visualization_msgs::Marker::DELETEALL;
-          RecastObstaclePub_.publish(deleteMark);
+          
         }
 
         // Get new navigation mesh
@@ -1293,8 +1297,7 @@ struct RecastNode
         if (RecastObstaclePub_.getNumSubscribers() >= 1)
         {
           ROS_INFO("Published obstacles No %d", listCount[3]++);
-          for (size_t i = 0; i < obstacleList_.size(); i++)
-            RecastObstaclePub_.publish(obstacleList_[i]);
+          RecastObstaclePub_.publish(obstacleList_);
         }
         if (OriginalMeshLinesPub_.getNumSubscribers() >= 1)
         {
