@@ -24,6 +24,8 @@
 #include <std_srvs/Trigger.h>
 #include "recast_ros/InputMeshSrv.h"
 #include "recast_ros/RecastPathMsg.h"
+#include "recast_ros/RecastGraphNode.h"
+#include "recast_ros/RecastGraph.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/vtk_lib_io.h>
@@ -78,6 +80,7 @@ struct RecastNode
     RecastObstaclePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("recast_obstacles", 1);
     graphNodePub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_nodes", 1);
     graphConnectionPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("graph_connections", 1);
+    graphPub_ = nodeHandle_.advertise<recast_ros::RecastGraph>("graph", 1);
 
     interactiveMarkerServer_.reset(new interactive_markers::InteractiveMarkerServer("navmesh", "", false));
     interactiveMarkerObstacleServer_.reset(new interactive_markers::InteractiveMarkerServer("obstacles", "", false));
@@ -474,8 +477,6 @@ struct RecastNode
     graphNodeList_.color.g = c.g;
     graphNodeList_.color.a = 1;
 
-    graphNodeList_.colors.resize(nodeSize, c);
-
     c.r = 0.390625;
     c.b = 0.13671875;
     c.g = 0.3359375;
@@ -483,17 +484,19 @@ struct RecastNode
     graphConnectionList_.color.r = c.r;
     graphConnectionList_.color.b = c.b;
     graphConnectionList_.color.g = c.g;
-
-    graphConnectionList_.colors.resize(nodeSize, c);
-
     graphConnectionList_.scale.x = 0.05;
 
     graphNodeList_.points.reserve(nodeSize / 3);
     graphConnectionList_.points.reserve(nodeSize / 3);
 
+    graph_.nodes.clear();
+    graph_.nodes.reserve(nodeSize / 3);
+    graph_.portals.clear();
+    graph_.portals.reserve(nodeSize / 6);
+
     ros::WallTime startFunc, endFunc;
     startFunc = ros::WallTime::now();
-    for (int i = 0; i < nodeSize; i = i + 3)
+    for (int i = 0; i < nodeSize; i = i + 6)
     {
       // skip nodes that are not accessible
       pcl::PointXYZ pt;
@@ -501,6 +504,11 @@ struct RecastNode
       pt.y = graphNodes_[i+1];
       pt.z = graphNodes_[i+2];
       std::vector<pcl::PointXYZ> path;
+      if (!recast_.query(reference_point_, pt, path, areaCostList_, noAreaTypes_, noPolygons_))
+        continue;
+      pt.x = graphNodes_[i+3];
+      pt.y = graphNodes_[i+4];
+      pt.z = graphNodes_[i+5];
       if (!recast_.query(reference_point_, pt, path, areaCostList_, noAreaTypes_, noPolygons_))
         continue;
 
@@ -511,6 +519,36 @@ struct RecastNode
 
       graphNodeList_.points.push_back(p);
       graphConnectionList_.points.push_back(p);
+
+      p.x = graphNodes_[i + 3];
+      p.y = graphNodes_[i + 4];
+      p.z = graphNodes_[i + 5] + graphNodeList_.scale.z / 2;
+
+      graphNodeList_.points.push_back(p);
+      graphConnectionList_.points.push_back(p);
+
+      // add nodes to our msg structure
+      recast_ros::RecastGraphNode node;
+      node.point.x = graphNodes_[i];
+      node.point.y = graphNodes_[i+1];
+      node.point.z = graphNodes_[i+2];
+      node.area_type.data = (char)graphNodeAreaTypes_[i/3];
+      node.cost.data = areaCostList_[node.area_type.data];
+      graph_.nodes.push_back(node);
+
+      node.point.x = graphNodes_[i+3];
+      node.point.y = graphNodes_[i+4];
+      node.point.z = graphNodes_[i+5];
+      node.area_type.data = (char)graphNodeAreaTypes_[i/3+1];
+      node.cost.data = areaCostList_[node.area_type.data];
+      graph_.nodes.push_back(node);
+
+      // add edge portal
+      geometry_msgs::Point portal;
+      portal.x = graphNodePortals_[i/2];
+      portal.y = graphNodePortals_[i/2+1];
+      portal.z = graphNodePortals_[i/2+2];
+      graph_.portals.push_back(portal);
     }
     endFunc = ros::WallTime::now();
     exec_time = (endFunc - startFunc).toNSec() * (1e-6);
@@ -970,7 +1008,8 @@ struct RecastNode
 
     pcl::PointXYZ proj;
     unsigned char areaType;
-    if (!recast_.getProjection(point, proj, areaType))
+    pcl::PointXYZ polyCenter;
+    if (!recast_.getProjection(point, proj, areaType, polyCenter))
     {
       ROS_ERROR("Could not project point");
       return false;
@@ -980,6 +1019,9 @@ struct RecastNode
     res.projected_point.y = proj.y;
     res.projected_point.z = proj.z;
     res.area_type.data = (char)areaType;
+    res.projected_polygon_center.x = polyCenter.x;
+    res.projected_polygon_center.y = polyCenter.y;
+    res.projected_polygon_center.z = polyCenter.z;
     return true;
   }
   //Interactive markers for triangles
@@ -1177,7 +1219,7 @@ struct RecastNode
     // infinite loop
     // Index = 0 -> NavMesh, Index = 1 -> Original Mesh, Index = 2 -> NavMesh Line List, Index = 3 -> Obstacle List, Index = 4 -> Original Mesh Line List
     // Index = 5 -> Filtered NavMesh Triangle List, Index = 6 -> Filtered NavMesh Line List, Index = 7 -> Graph Nodes List, Index = 8 -> Graph Connection List
-    std::vector<int> listCount(9, 0);
+    std::vector<int> listCount(10, 0);
     // counter for the ratio between RViz Marker publishing rate and ROS::services cycle frequency
     int loopCount = 0;
 
@@ -1202,6 +1244,8 @@ struct RecastNode
 
         //Clears previous map data
         graphNodes_.clear();
+        graphNodePortals_.clear();
+        graphNodeAreaTypes_.clear();
         areaList.clear();
         lineList.clear();
 
@@ -1235,7 +1279,7 @@ struct RecastNode
         else
           ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
 
-        if (recast_.drawRecastGraph(graphNodes_))
+        if (recast_.drawRecastGraph(graphNodes_, graphNodePortals_, graphNodeAreaTypes_))
         {
           graphNodeList_.points.clear();
           graphNodeList_.colors.clear();
@@ -1321,6 +1365,11 @@ struct RecastNode
           ROS_INFO("Published Graph Connection No %d", listCount[8]++);
           graphConnectionPub_.publish(graphConnectionList_);
         }
+        if (graphPub_.getNumSubscribers() >= 1)
+        {
+          ROS_INFO("Published Graph No %d", listCount[9]++);
+          graphPub_.publish(graph_);
+        }
         loopCount = 0;
       }
 
@@ -1344,6 +1393,7 @@ struct RecastNode
   ros::Publisher RecastPathGoalPub_;
   ros::Publisher graphNodePub_;
   ros::Publisher graphConnectionPub_;
+  ros::Publisher graphPub_;
   ros::Rate loopRate_;
   double frequency_ = 100.0;
   int rvizFrequency_ = 10;
@@ -1389,6 +1439,8 @@ struct RecastNode
   std::vector<float> areaCostList_;
   std::vector<char> areaLabels_;
   std::vector<float> graphNodes_;
+  std::vector<float> graphNodePortals_;
+  std::vector<unsigned char> graphNodeAreaTypes_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
   bool obstacleRemoved_ = false;
@@ -1418,6 +1470,7 @@ struct RecastNode
   visualization_msgs::Marker originalLineList_;
   visualization_msgs::Marker graphNodeList_;
   visualization_msgs::Marker graphConnectionList_;
+  recast_ros::RecastGraph graph_;
   std::vector<visualization_msgs::Marker> obstacleList_;
   visualization_msgs::Marker pathList_;
   visualization_msgs::Marker agentStartPos_;

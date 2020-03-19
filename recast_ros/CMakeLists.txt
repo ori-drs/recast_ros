@@ -112,6 +112,8 @@ include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
  add_message_files(
     FILES
     RecastPathMsg.msg
+    RecastGraphNode.msg
+    RecastGraph.msg
  )
 
 ## Generate services in the 'srv' folder

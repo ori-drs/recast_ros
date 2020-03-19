@@ -40,6 +40,7 @@ public:
   bool query(const pcl::PointXYZ &start, const pcl::PointXYZ &end, std::vector<pcl::PointXYZ> &path, const std::vector<float> &areaCostList, const int &areaTypeCount, const int &noPolygons);
   //Interactive tool to project 3D goal point to 2D for test_planning_service_interactive
   bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType);
+  bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType, pcl::PointXYZ &polyCenter);
   boost::shared_ptr<Sample> getMySample() { return sample; }
   //Add RecastObstacles to NavMesh, updates the tiles/NavMesh
   bool addRecastObstacle(const float *pos, const float &radi, const float &height);
@@ -48,6 +49,7 @@ public:
   void clearAllRecastObstacles();
   void update();
   bool drawRecastGraph(std::vector<float> &graphNodes);
+  bool drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes);
   //Converts dtNavMesh map to pcl::PolygonMesh
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const;
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh) const;

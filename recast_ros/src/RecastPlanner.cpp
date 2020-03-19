@@ -316,6 +316,157 @@ static void getPolyCenter(const dtNavMesh *navMesh, const dtPoly *poly, const dt
   center[2] *= s;
 }
 
+//Same function from DetourNavMeshQuery in original recastnavigation... Returns portal points between two polygons.
+static bool getPortalPoints(dtPolyRef from, const dtPoly* fromPoly, const dtMeshTile* fromTile,
+                            dtPolyRef to, const dtPoly* toPoly, const dtMeshTile* toTile,
+                            float* left, float* right)
+{
+  // Find the link that points to the 'to' polygon.
+  const dtLink* link = 0;
+  for (unsigned int i = fromPoly->firstLink; i != DT_NULL_LINK; i = fromTile->links[i].next) {
+    if (fromTile->links[i].ref == to) {
+      link = &fromTile->links[i];
+      break;
+    }
+  }
+  if (!link)
+    return false;
+
+  // Handle off-mesh connections.
+  if (fromPoly->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) {
+    // Find link that points to first vertex.
+    for (unsigned int i = fromPoly->firstLink; i != DT_NULL_LINK; i = fromTile->links[i].next) {
+      if (fromTile->links[i].ref == to) {
+        const int v = fromTile->links[i].edge;
+        dtVcopy(left, &fromTile->verts[fromPoly->verts[v]*3]);
+        dtVcopy(right, &fromTile->verts[fromPoly->verts[v]*3]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  if (toPoly->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) {
+    for (unsigned int i = toPoly->firstLink; i != DT_NULL_LINK; i = toTile->links[i].next) {
+      if (toTile->links[i].ref == from) {
+        const int v = toTile->links[i].edge;
+        dtVcopy(left, &toTile->verts[toPoly->verts[v]*3]);
+        dtVcopy(right, &toTile->verts[toPoly->verts[v]*3]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Find portal vertices.
+  const int v0 = fromPoly->verts[link->edge];
+  const int v1 = fromPoly->verts[(link->edge+1) % (int)fromPoly->vertCount];
+  dtVcopy(left, &fromTile->verts[v0*3]);
+  dtVcopy(right, &fromTile->verts[v1*3]);
+
+  // If the link is at tile boundary, dtClamp the vertices to
+  // the link width.
+  if (link->side != 0xff) {
+    // Unpack portal limits.
+    if (link->bmin != 0 || link->bmax != 255) {
+      const float s = 1.0f/255.0f;
+      const float tmin = link->bmin*s;
+      const float tmax = link->bmax*s;
+      dtVlerp(left, &fromTile->verts[v0*3], &fromTile->verts[v1*3], tmin);
+      dtVlerp(right, &fromTile->verts[v0*3], &fromTile->verts[v1*3], tmax);
+    }
+  }
+
+  return true;
+}
+
+//Same function from DetourNavMeshQuery in original recastnavigation
+static bool getEdgeMidPoint(dtPolyRef from, const dtPoly* fromPoly, const dtMeshTile* fromTile,
+										 dtPolyRef to, const dtPoly* toPoly, const dtMeshTile* toTile,
+										 float* mid)
+{
+	float left[3], right[3];
+	if (dtStatusFailed(getPortalPoints(from, fromPoly, fromTile, to, toPoly, toTile, left, right)))
+		return false;
+	mid[0] = (left[0]+right[0])*0.5f;
+	mid[1] = (left[1]+right[1])*0.5f;
+	mid[2] = (left[2]+right[2])*0.5f;
+	return true;
+}
+
+bool RecastPlanner::getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType, pcl::PointXYZ &polyCenter)
+{
+  if (!sample)
+    return false;
+  dtNavMesh *navmesh = sample->getNavMesh();
+  dtNavMeshQuery *navquery = sample->getNavMeshQuery();
+  if (!navmesh || !navquery)
+    return false;
+
+  const float polyPickExt[3] = {2, 4, 2};
+  dtQueryFilter filter;
+  filter.setIncludeFlags(0x3);
+  filter.setExcludeFlags(0x0);
+
+  // Convert
+  float spos[3];
+  float nspos[3];
+  if (needToRotateMesh)
+  {
+    spos[0] = point.x;
+    spos[1] = point.z;
+    spos[2] = -point.y;
+  }
+  else
+  {
+    spos[0] = point.x;
+    spos[1] = point.y;
+    spos[2] = point.z;
+  }
+
+  // Find polygon
+  dtPolyRef ref;
+  navquery->findNearestPoly(spos, polyPickExt, &filter, &ref, nspos);
+  if (!ref)
+    return false;
+
+  // Get projected point
+  if (needToRotateMesh)
+  {
+    proj.x = nspos[0];  // in Recast x points front
+    proj.y = -nspos[2]; // in Recast z points right
+    proj.z = nspos[1];  // in Recast y points up
+  }
+  else
+  {
+    proj.x = nspos[0];
+    proj.y = nspos[1];
+    proj.z = nspos[2];
+  }
+
+  // Get area type
+  if (navmesh->getPolyArea(ref, &areaType) != DT_SUCCESS)
+    return false;
+
+  // Get projected polygon
+  float pppos[3];
+  getPolyCenter(navmesh, ref, pppos);
+  if (needToRotateMesh)
+  {
+    polyCenter.x = pppos[0];  // in Recast x points front
+    polyCenter.y = -pppos[2]; // in Recast z points right
+    polyCenter.z = pppos[1];  // in Recast y points up
+  }
+  else
+  {
+    polyCenter.x = pppos[0];
+    polyCenter.y = pppos[1];
+    polyCenter.z = pppos[2];
+  }
+
+  return true;
+}
+
 //Builds non-directional graph of reachable polygons from reference_point in a circular region with radius searchRadius
 bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes)
 {
@@ -367,6 +518,77 @@ bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes)
         graphNodes.push_back(c1[0]);
         graphNodes.push_back(-c1[2]);
         graphNodes.push_back(c1[1]);
+      }
+    }
+  }
+
+  return true;
+}
+
+bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes)
+{
+  if (!sample)
+  {
+    ROS_ERROR("SampleObj FAILED");
+    return false;
+  }
+  const dtNavMesh *mesh = sample->getNavMesh();
+  if (!mesh)
+  {
+    ROS_ERROR("dtNavMesh FAILED");
+    return false;
+  }
+
+  // go through all tiles
+
+  if (mesh->getMaxTiles() < 1)
+  {
+    ROS_ERROR("Max tiles are 0");
+    return false;
+  }
+  for (int i = 0; i < mesh->getMaxTiles(); ++i)
+  {
+    const dtMeshTile *tile = mesh->getTile(i);
+    if (!tile->header)
+      continue;
+    for (int i = 0; i < tile->header->polyCount; ++i)
+    {
+      dtPoly *p = &tile->polys[i];
+      dtPolyRef pRef = tile->links[i].ref;
+      if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) // Skip off-mesh links.
+        continue;
+      for (unsigned int j = p->firstLink; j != DT_NULL_LINK; j = tile->links[j].next)
+      {
+        dtPolyRef neighbourRef = tile->links[j].ref;
+        const dtMeshTile *neighbourTile = 0;
+        const dtPoly *neighbourPoly = 0;
+        mesh->getTileAndPolyByRefUnsafe(neighbourRef, &neighbourTile, &neighbourPoly);
+        float c0[3], c1[3];
+
+        getPolyCenter(mesh, neighbourRef, c0);
+        getPolyCenter(mesh, p, tile, c1);
+
+        graphNodes.push_back(c0[0]);
+        graphNodes.push_back(-c0[2]);
+        graphNodes.push_back(c0[1]);
+
+        graphNodes.push_back(c1[0]);
+        graphNodes.push_back(-c1[2]);
+        graphNodes.push_back(c1[1]);
+
+        // portal point between two nodes. TODO: do we need both directions here?
+        float mid[3];
+        getEdgeMidPoint(pRef, p, tile, neighbourRef, neighbourPoly, neighbourTile, mid);
+        graphPortals.push_back(mid[0]);
+        graphPortals.push_back(-mid[2]);
+        graphPortals.push_back(mid[1]);
+
+        // area types
+        unsigned char a0, a1;
+        if (mesh->getPolyArea(neighbourRef, &a0) != DT_SUCCESS) return false;
+        if (mesh->getPolyArea(pRef, &a1) != DT_SUCCESS) return false;
+        areaTypes.push_back(a0);
+        areaTypes.push_back(a1);
       }
     }
   }
