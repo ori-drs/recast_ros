@@ -765,10 +765,12 @@ struct RecastNode
     startX_ = req.startXYZ.x;
     startY_ = req.startXYZ.y;
     startZ_ = req.startXYZ.z;
+    startSet_ = true;
     ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
     goalX_ = req.goalXYZ.x;
     goalY_ = req.goalXYZ.y;
     goalZ_ = req.goalXYZ.z;
+    goalSet_ = true;
     ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
     // test path planning (Detour)
     std::vector<pcl::PointXYZ> path;
