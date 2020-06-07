@@ -525,7 +525,7 @@ bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes)
   return true;
 }
 
-bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes)
+bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes, std::vector<int> &idxTriangles, std::vector<int> &numTriangles)
 {
   if (!sample)
   {
@@ -538,17 +538,38 @@ bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<
     ROS_ERROR("dtNavMesh FAILED");
     return false;
   }
-
-  // go through all tiles
-
   if (mesh->getMaxTiles() < 1)
   {
     ROS_ERROR("Max tiles are 0");
     return false;
   }
-  for (int i = 0; i < mesh->getMaxTiles(); ++i)
+
+  // store idx and num triangles for each node
+  int totalTriangles = 0;
+  std::map<const dtPoly*, std::pair<int,int> > polyref2idxnum;
+  for (int t = 0; t < mesh->getMaxTiles(); ++t)
   {
-    const dtMeshTile *tile = mesh->getTile(i);
+    const dtMeshTile *tile = mesh->getTile(t);
+    if (!tile->header)
+      continue;
+    for (int i = 0; i < tile->header->polyCount; ++i)
+    {
+      dtPoly *p = &tile->polys[i];
+      dtPolyRef pRef = tile->links[i].ref;
+      if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) // Skip off-mesh links.
+        continue;
+      polyref2idxnum[p] = std::pair<int,int>(totalTriangles*3, tile->detailMeshes[i].triCount);
+      totalTriangles += tile->detailMeshes[i].triCount;
+    }
+  }
+
+  int count0 = 0;
+  int count1 = 0;
+
+  // go through all tiles
+  for (int t = 0; t < mesh->getMaxTiles(); ++t)
+  {
+    const dtMeshTile *tile = mesh->getTile(t);
     if (!tile->header)
       continue;
     for (int i = 0; i < tile->header->polyCount; ++i)
@@ -575,6 +596,14 @@ bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<
         graphNodes.push_back(c1[0]);
         graphNodes.push_back(-c1[2]);
         graphNodes.push_back(c1[1]);
+
+        // triangles
+        const std::pair<int,int> idxnum0 = polyref2idxnum[neighbourPoly];
+        const std::pair<int,int> idxnum1 = polyref2idxnum[p];
+        idxTriangles.push_back(idxnum0.first);
+        idxTriangles.push_back(idxnum1.first);
+        numTriangles.push_back(idxnum0.second);
+        numTriangles.push_back(idxnum1.second);
 
         // portal point between two nodes. TODO: do we need both directions here?
         float mid[3];
@@ -622,9 +651,9 @@ bool RecastPlanner::getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<p
     ROS_ERROR("Max tiles are 0");
     return false;
   }
-  for (int i = 0; i < mesh->getMaxTiles(); ++i)
+  for (int t = 0; t < mesh->getMaxTiles(); ++t)
   {
-    const dtMeshTile *tile = mesh->getTile(i);
+    const dtMeshTile *tile = mesh->getTile(t);
     if (!tile->header)
       continue;
     dtPolyRef base = mesh->getPolyRefBase(tile);

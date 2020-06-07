@@ -534,6 +534,8 @@ struct RecastNode
       node.point.z = graphNodes_[i+2];
       node.area_type.data = (char)graphNodeAreaTypes_[i/3];
       node.cost.data = areaCostList_[node.area_type.data];
+      node.idx_triangles.data = graphNodeIdxTriangles_[i/3];
+      node.num_triangles.data = graphNodeNumTriangles_[i/3];
       graph_.nodes.push_back(node);
 
       node.point.x = graphNodes_[i+3];
@@ -541,6 +543,8 @@ struct RecastNode
       node.point.z = graphNodes_[i+5];
       node.area_type.data = (char)graphNodeAreaTypes_[i/3+1];
       node.cost.data = areaCostList_[node.area_type.data];
+      node.idx_triangles.data = graphNodeIdxTriangles_[i/3+1];
+      node.num_triangles.data = graphNodeNumTriangles_[i/3+1];
       graph_.nodes.push_back(node);
 
       // add edge portal
@@ -1248,6 +1252,8 @@ struct RecastNode
         graphNodes_.clear();
         graphNodePortals_.clear();
         graphNodeAreaTypes_.clear();
+        graphNodeIdxTriangles_.clear();
+        graphNodeNumTriangles_.clear();
         areaList.clear();
         lineList.clear();
 
@@ -1281,7 +1287,7 @@ struct RecastNode
         else
           ROS_INFO("Number of NavMesh Polygons: %d", noPolygons_);
 
-        if (recast_.drawRecastGraph(graphNodes_, graphNodePortals_, graphNodeAreaTypes_))
+        if (recast_.drawRecastGraph(graphNodes_, graphNodePortals_, graphNodeAreaTypes_, graphNodeIdxTriangles_, graphNodeNumTriangles_))
         {
           graphNodeList_.points.clear();
           graphNodeList_.colors.clear();
@@ -1443,6 +1449,8 @@ struct RecastNode
   std::vector<float> graphNodes_;
   std::vector<float> graphNodePortals_;
   std::vector<unsigned char> graphNodeAreaTypes_;
+  std::vector<int> graphNodeIdxTriangles_;
+  std::vector<int> graphNodeNumTriangles_;
   bool updateMeshCheck_ = false; // private flag to check whether a map update required or not
   bool obstacleAdded_ = false;   // check whether obstacle is added or not
   bool obstacleRemoved_ = false;

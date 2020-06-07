@@ -49,7 +49,7 @@ public:
   void clearAllRecastObstacles();
   void update();
   bool drawRecastGraph(std::vector<float> &graphNodes);
-  bool drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes);
+  bool drawRecastGraph(std::vector<float> &graphNodes, std::vector<float> &graphPortals, std::vector<unsigned char> &areaTypes, std::vector<int> &idxTriangles, std::vector<int> &numTriangles);
   //Converts dtNavMesh map to pcl::PolygonMesh
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pclcloud, std::vector<Eigen::Vector3d> &lineList, std::vector<unsigned char> &areaList, int &noPolygons) const;
   bool getNavMesh(pcl::PolygonMesh::Ptr &pclmesh) const;
