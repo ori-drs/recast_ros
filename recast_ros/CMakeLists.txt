@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
   interactive_markers
+  recast_navigation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -53,29 +54,6 @@ find_package(catkin REQUIRED COMPONENTS
 #endmacro(use_cxx11)
 #use_cxx11()
 
-# Recast Library
-set(RECAST_DIR "src/recastnavigation")
-set(RECAST_INCLUDE_DIRS
-  ${RECAST_DIR}/DebugUtils/Include
-  ${RECAST_DIR}/Detour/Include
-  ${RECAST_DIR}/DetourTileCache/Include
-  ${RECAST_DIR}/DetourCrowd/Include
-  ${RECAST_DIR}/Recast/Include
-  ${RECAST_DIR}/RecastDemo/Contrib/fastlz
-  include
-)
-include_directories(${RECAST_INCLUDE_DIRS})
-file(GLOB RecastSources
-  ${RECAST_DIR}/DebugUtils/Source/*.cpp
-  ${RECAST_DIR}/Detour/Source/*.cpp
-  ${RECAST_DIR}/DetourTileCache/Source/*.cpp
-  ${RECAST_DIR}/DetourCrowd/Source/*.cpp
-  ${RECAST_DIR}/Recast/Source/*.cpp
-  ${RECAST_DIR}/Recast/Source/*.c
-  ${RECAST_DIR}/RecastDemo/Contrib/fastlz/*.c
- #${RECAST_DIR}/RecastDemo/Source/*.cpp
-  src/*.cpp
-)
 include_directories(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake) 
 
 
@@ -188,11 +166,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-add_library(recast_ros
-  ${RecastSources}
-)
-
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -201,7 +174,7 @@ add_library(recast_ros
 ## recast test
 
 add_executable(recast_node src/nodes/recast_node.cpp)
-target_link_libraries(recast_node recast_ros ${catkin_LIBRARIES})
+target_link_libraries(recast_node recast_navigation ${catkin_LIBRARIES})
 add_dependencies(recast_node  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
 
@@ -222,11 +195,11 @@ target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})
 add_dependencies(test_planning_service_interactive ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(test_input_map src/nodes/test_input_map.cpp)
-target_link_libraries(test_input_map recast_ros ${catkin_LIBRARIES})
+target_link_libraries(test_input_map recast_navigation ${catkin_LIBRARIES})
 add_dependencies(test_input_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(test_update_parameters src/nodes/test_update_parameters.cpp)
-target_link_libraries(test_update_parameters recast_ros ${catkin_LIBRARIES})
+target_link_libraries(test_update_parameters recast_navigation ${catkin_LIBRARIES})
 add_dependencies(test_update_parameters ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 

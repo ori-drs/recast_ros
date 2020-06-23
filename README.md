@@ -22,10 +22,9 @@ The paper is available [here](https://www.martimbrandao.com/papers/Brandao2020-r
 
 ## Building
 
-You need to download the original recastnavigation source code:
+You need to clone the original recastnavigation source code:
 ```
-cd recast_ros/src
-git clone https://github.com/recastnavigation/recastnavigation.git
+git clone https://github.com/ori-drs/recastnavigation
 ```
 
 ## Usage
