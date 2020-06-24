@@ -561,7 +561,7 @@ struct RecastNode
   {
     visualization_msgs::Marker newMarker;
 
-    float pos[3] = {req.position.x, req.position.y, req.position.z};
+    float pos[3] = {static_cast<float>(req.position.x), static_cast<float>(req.position.y), static_cast<float>(req.position.z)};
     float radius = req.radius;
     float height = req.height;
 
