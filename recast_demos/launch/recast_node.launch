@@ -22,19 +22,18 @@ freely, subject to the following restrictions:
 <launch>
 
   <arg name="norviz" default="false"/>
-  <arg name="norqt" default="false"/>
-
+  <arg name="norqt" default="true"/>
 
   <!-- Start Rviz f and Dynamic Reconfiguration or NavMesh -->
   <node type="rviz" name="recast_node_visual" pkg="rviz" args="-d $(find recast_demos)/rviz/recast_node.rviz" unless="$(arg norviz)" />
   <node type="rviz" name="recast_node_interactive" pkg="rviz" args="-d $(find recast_demos)/rviz/recast_node_interactive.rviz" unless="$(arg norviz)" />
   <node name="rqt_gui" pkg="rqt_reconfigure" type="rqt_reconfigure" unless="$(arg norqt)"/>
+
   <!-- load and publish fsc map -->
   <node pkg="recast_ros" type="recast_node" name="recast_node" respawn="false" output="screen">
-
     <param name="cell_size" value="0.1f" />
     <param name="cell_height" value="0.1f" />
-    <param name="agent_height" value="0.7f" />
+    <param name="agent_height" value="0.4f" />
     <param name="agent_radius" value="0.2f" />
     <param name="agent_max_climb" value="0.41f" />
     <param name="agent_max_slope" value="60.0f" />
@@ -44,6 +43,10 @@ freely, subject to the following restrictions:
     <param name="obstacle_height" value="1.0" />
     <param name="dynamic_reconfigure" value="true" />
     <param name="replan_path" value="true" />
+
+    <param name="offset_origin_x" value="0.0"/>
+    <param name="offset_origin_y" value="5.0"/>
+    <param name="offset_origin_z" value="0.0"/>        
 
     <param name="TERRAIN_TYPE1_COST" value="1.0f" />
     <param name="TERRAIN_TYPE2_COST" value="1.0f" />

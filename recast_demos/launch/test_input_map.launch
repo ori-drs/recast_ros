@@ -25,9 +25,12 @@ freely, subject to the following restrictions:
   <node pkg="recast_ros" type="test_input_map" name="test_input_map" respawn="false" output="screen">
   	<param name="path" value="$(find gaitmesh_ros)/data/annotate_cloud_gaits_mesh.obj" />
   	<param name="path_areas" value="$(find gaitmesh_ros)/data/annotate_cloud_gaits_mesh.dat" />
-    <param name="reference_point_x" value="6.0" />
+    <param name="reference_point_x" value="0.5" />
+    <param name="reference_point_y" value="0.0" />
+    <param name="reference_point_z" value="-1.0" />    
+    <!-- <param name="reference_point_x" value="6.0" />
     <param name="reference_point_y" value="74.0" />
-    <param name="reference_point_z" value="4.0" />
+    <param name="reference_point_z" value="4.0" /> -->
 
   </node>
 
