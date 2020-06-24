@@ -1088,7 +1088,9 @@ struct RecastNode
       }
       temp++;
     }
-    RecastObstaclePub_.publish(obstacleList_);
+    visualization_msgs::MarkerArray ma;
+    ma.markers = obstacleList_;
+    RecastObstaclePub_.publish(ma);
     recast_.removeRecastObstacle(actualPos);
     recast_.update();
 
@@ -1211,9 +1213,9 @@ struct RecastNode
             ROS_ERROR("Map update failed");
 
           //Clear Obstacles' Markers
-          std::vector<visualization_msgs::Marker> deleteMarkers(obstacleList_.size());
-          for(auto& marker : deleteMarkers)
-            marker.action = visualization_msgs::Marker::DELETEALL;
+          visualization_msgs::MarkerArray deleteMarkers;
+          deleteMarkers.markers.resize(1);
+          deleteMarkers.markers[0].action = visualization_msgs::Marker::DELETEALL;
           visualization_msgs::Marker deleteMark;
           deleteMark.action = visualization_msgs::Marker::DELETEALL;  
           RecastObstaclePub_.publish(deleteMarkers);
@@ -1225,12 +1227,11 @@ struct RecastNode
         if (allObstaclesRemoved_)
         {
           //Clear Obstacles' Markers
-          std::vector<visualization_msgs::Marker> deleteMarkers(obstacleList_.size());
-          for(auto& marker : deleteMarkers)
-            marker.action = visualization_msgs::Marker::DELETEALL;
+          visualization_msgs::MarkerArray deleteMarkers;
+          deleteMarkers.markers.resize(1);
+          deleteMarkers.markers[0].action = visualization_msgs::Marker::DELETEALL;
           RecastObstaclePub_.publish(deleteMarkers);  
           obstacleList_.clear();
-          
         }
 
         // Get new navigation mesh
@@ -1297,7 +1298,9 @@ struct RecastNode
         if (RecastObstaclePub_.getNumSubscribers() >= 1)
         {
           ROS_INFO("Published obstacles No %d", listCount[3]++);
-          RecastObstaclePub_.publish(obstacleList_);
+          visualization_msgs::MarkerArray ma;
+          ma.markers = obstacleList_;
+          RecastObstaclePub_.publish(ma);
         }
         if (OriginalMeshLinesPub_.getNumSubscribers() >= 1)
         {
