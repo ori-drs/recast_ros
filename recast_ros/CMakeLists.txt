@@ -172,9 +172,12 @@ include_directories(
 # add_dependencies(wabian_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## recast test
+file(GLOB RecastSources
+  src/*.cpp
+)
 
-add_executable(recast_node src/nodes/recast_node.cpp)
-target_link_libraries(recast_node recast_navigation ${catkin_LIBRARIES})
+add_executable(recast_node src/nodes/recast_node.cpp ${RecastSources})
+target_link_libraries(recast_node ${catkin_LIBRARIES})
 add_dependencies(recast_node  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_dependencies(recast_node  ${PROJECT_NAME}_gencfg)
 
@@ -194,12 +197,12 @@ add_executable(test_planning_service_interactive src/nodes/test_planning_service
 target_link_libraries(test_planning_service_interactive ${catkin_LIBRARIES})
 add_dependencies(test_planning_service_interactive ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(test_input_map src/nodes/test_input_map.cpp)
-target_link_libraries(test_input_map recast_navigation ${catkin_LIBRARIES})
+add_executable(test_input_map src/nodes/test_input_map.cpp ${RecastSources})
+target_link_libraries(test_input_map ${catkin_LIBRARIES})
 add_dependencies(test_input_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(test_update_parameters src/nodes/test_update_parameters.cpp)
-target_link_libraries(test_update_parameters recast_navigation ${catkin_LIBRARIES})
+add_executable(test_update_parameters src/nodes/test_update_parameters.cpp ${RecastSources})
+target_link_libraries(test_update_parameters ${catkin_LIBRARIES})
 add_dependencies(test_update_parameters ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
