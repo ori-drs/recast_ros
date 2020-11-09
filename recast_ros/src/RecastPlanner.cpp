@@ -613,9 +613,9 @@ bool RecastPlanner::drawRecastGraph(std::vector<float> &graphNodes, std::vector<
         graphPortals.push_back(mid[1]);
 
         // area types
-        unsigned char a0, a1;
-        if (mesh->getPolyArea(neighbourRef, &a0) != DT_SUCCESS) return false;
-        if (mesh->getPolyArea(pRef, &a1) != DT_SUCCESS) return false;
+        unsigned char a0 = 0, a1 = 0;
+        mesh->getPolyArea(neighbourRef, &a0);
+        mesh->getPolyArea(pRef, &a1);
         areaTypes.push_back(a0);
         areaTypes.push_back(a1);
       }
