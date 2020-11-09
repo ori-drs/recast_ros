@@ -120,10 +120,10 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Class: rviz/Marker
+    - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /recast_node/recast_obstacles
-      Name: Marker
+      Name: RecastObstacles
       Namespaces:
         Obstacles: true
       Queue Size: 100
