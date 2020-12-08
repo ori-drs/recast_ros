@@ -582,7 +582,7 @@ struct RecastNode
   {
     visualization_msgs::Marker newMarker;
 
-    float pos[3] = {req.position.x, req.position.y, req.position.z};
+    float pos[3] = {static_cast<float>(req.position.x), static_cast<float>(req.position.y), static_cast<float>(req.position.z)};
     float radius = req.radius;
     float height = req.height;
 
@@ -782,17 +782,15 @@ struct RecastNode
     setVisualParameters(agentStartPos_, visualization_msgs::Marker::SPHERE, "Agent Start Position", 1);
     setVisualParameters(agentGoalPos_, visualization_msgs::Marker::SPHERE, "Agent Goal Position", 10);
     //Get Input
-    ROS_INFO("Input positions are;");
     startX_ = req.startXYZ.x;
     startY_ = req.startXYZ.y;
     startZ_ = req.startXYZ.z;
     startSet_ = true;
-    ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
     goalX_ = req.goalXYZ.x;
     goalY_ = req.goalXYZ.y;
     goalZ_ = req.goalXYZ.z;
     goalSet_ = true;
-    ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
+
     // test path planning (Detour)
     std::vector<pcl::PointXYZ> path;
     pcl::PointXYZ start, goal;
@@ -829,16 +827,20 @@ struct RecastNode
     bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_, noPolygons_);
     pathEnd = ros::WallTime::now();
 
-    double exec_time = (pathEnd - pathStart).toNSec() * (1e-6);
-    ROS_INFO("Path Query Execution Time (ms): %f", exec_time);
+    double exec_time_recast_query = (pathEnd - pathStart).toNSec() * (1e-6);
 
     //path fails
     if (!checkStatus)
     {
-      ROS_ERROR("Could not obtain shortest path");
+      ROS_ERROR_THROTTLE(0.5, "Start: (%.2f, %.2f, %.2f)\t"
+                         "Goal: (%.2f, %.2f, %.2f)\t"
+                         "Could not obtain shortest path",
+                         startX_, startY_, startZ_,
+                         goalX_, goalY_, goalZ_);
       return checkStatus;
     }
-    ROS_INFO("Success: path has size %d", (int)path.size());
+
+    // ROS_INFO("Success: path has size %d", (int)path.size());
 
     // avoid issues with single-point paths (=goal)
     if (path.size() == 1)
@@ -854,7 +856,7 @@ struct RecastNode
       recast_.getProjection(path[i], pt, areaType);
       path[i] = pt;
       // pass it on to result
-      ROS_INFO("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
+      ROS_DEBUG("path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
       res.path[i].x = path[i].x;
       res.path[i].y = path[i].y;
       res.path[i].z = path[i].z;
@@ -901,26 +903,38 @@ struct RecastNode
 
     endFunc = ros::WallTime::now();
 
-    exec_time = (endFunc - startFunc).toNSec() * (1e-6);
+    double exec_time_path_planning = (endFunc - startFunc).toNSec() * (1e-6);
 
-    ROS_INFO("Whole path service execution time (ms): %f", exec_time);
+    // Debug information
+    ROS_INFO_THROTTLE(0.5, "Start: (%.2f, %.2f, %.2f)\t"
+                      "Goal: (%.2f, %.2f, %.2f)\t"
+                      "Path query time (ms): %.2f\t"
+                      "Success: Path length: %d\t"
+                      "Path planning time (ms): %.2f",
+                      startX_, startY_, startZ_,
+                      goalX_, goalY_, goalZ_,
+                      exec_time_recast_query,
+                      (int)path.size(),
+                      exec_time_path_planning);
 
     return checkStatus;
   }
+
+  // This is the main path planner running continuously
   void findPathPlanner()
   {
     ros::WallTime startFunc, endFunc, pathStart, pathEnd;
     startFunc = ros::WallTime::now();
+
     //Set visual default visual parameters
     geometry_msgs::Point p;
     std_msgs::ColorRGBA c;
     setVisualParameters(pathList_, visualization_msgs::Marker::LINE_LIST, "Path Lines", 0);
     setVisualParameters(agentStartPos_, visualization_msgs::Marker::SPHERE, "Agent Start Position", 1);
     setVisualParameters(agentGoalPos_, visualization_msgs::Marker::SPHERE, "Agent Goal Position", 10);
+
     //Get Input
-    ROS_INFO("Input positions are;");
-    ROS_INFO("Start Position x=%f, y=%f, z=%f", startX_, startY_, startZ_);
-    ROS_INFO("Goal Position x=%f, y=%f, z=%f", goalX_, goalY_, goalZ_);
+
     // test path planning (Detour)
     std::vector<pcl::PointXYZ> path;
     pcl::PointXYZ start, goal;
@@ -936,18 +950,18 @@ struct RecastNode
     agentStartPos_.pose.position.x = startX_;
     agentStartPos_.pose.position.y = startY_;
     agentStartPos_.pose.position.z = startZ_ + agentHeight_;
-    agentStartPos_.color.a = 0.6;
-    agentStartPos_.color.r = 0.0;
-    agentStartPos_.color.g = 1.0;
-    agentStartPos_.color.b = 0.0;
+    agentStartPos_.color.a = 0.6f;
+    agentStartPos_.color.r = 0.0f;
+    agentStartPos_.color.g = 1.0f;
+    agentStartPos_.color.b = 0.0f;
 
     agentGoalPos_.pose.position.x = goalX_;
     agentGoalPos_.pose.position.y = goalY_;
     agentGoalPos_.pose.position.z = goalZ_ + agentHeight_;
-    agentGoalPos_.color.a = 0.6;
-    agentGoalPos_.color.r = 1.0;
-    agentGoalPos_.color.g = 0.0;
-    agentGoalPos_.color.b = 0.0;
+    agentGoalPos_.color.a = 0.6f;
+    agentGoalPos_.color.r = 1.0f;
+    agentGoalPos_.color.g = 0.0f;
+    agentGoalPos_.color.b = 0.0f;
 
     RecastPathStartPub_.publish(agentStartPos_);
     RecastPathGoalPub_.publish(agentGoalPos_);
@@ -957,19 +971,22 @@ struct RecastNode
     bool checkStatus = recast_.query(start, goal, path, areaCostList_, noAreaTypes_, noPolygons_);
     pathEnd = ros::WallTime::now();
 
-    double exec_time = (pathEnd - pathStart).toNSec() * (1e-6);
-    ROS_INFO("Path Query Execution Time (ms): %f", exec_time);
+    double exec_time_recast_query = (pathEnd - pathStart).toNSec() * (1e-6);
 
-    //path fails
+    // path fails
     if (!checkStatus)
     {
-      ROS_ERROR("Could not obtain shortest path");
+      ROS_ERROR_THROTTLE(0.5, "Start: (%.2f, %.2f, %.2f)\t"
+                         "Goal: (%.2f, %.2f, %.2f)\t"
+                         "Could not obtain shortest path",
+                         startX_, startY_, startZ_,
+                         goalX_, goalY_, goalZ_);
       return;
     }
-    ROS_INFO("Success: path has size %d", (int)path.size());
+
     for (unsigned int i = 0; i < path.size(); i++)
     {
-      ROS_INFO("Recevied Path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
+      ROS_DEBUG("Received Path[%d] = %f %f %f", i, path[i].x, path[i].y, path[i].z);
     }
 
     // avoid issues with single-point paths (=goal)
@@ -1015,9 +1032,19 @@ struct RecastNode
 
     endFunc = ros::WallTime::now();
 
-    exec_time = (endFunc - startFunc).toNSec() * (1e-6);
+    double exec_time_path_planning = (endFunc - startFunc).toNSec() * (1e-6);
 
-    ROS_INFO("Whole path service execution time (ms): %f", exec_time);
+    // Debug information
+    ROS_INFO_THROTTLE(0.5, "Start: (%.2f, %.2f, %.2f)\t"
+                      "Goal: (%.2f, %.2f, %.2f)\t"
+                      "Path query time (ms): %.2f\t"
+                      "Success: Path length: %d\t"
+                      "Path planning time (ms): %.2f",
+                      startX_, startY_, startZ_,
+                      goalX_, goalY_, goalZ_,
+                      exec_time_recast_query,
+                      (int)path.size(),
+                      exec_time_path_planning);
 
     return;
   }
@@ -1351,54 +1378,54 @@ struct RecastNode
         // Publish lists
         if (NavMeshPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
         {
-          ROS_INFO("Published Navigation Mesh Triangle List No %d", listCount[0]++);
+          ROS_DEBUG_THROTTLE(1, "Published Navigation Mesh Triangle List No %d", listCount[0]++);
           NavMeshPub_.publish(navMesh_);
         }
         if (OriginalMeshPub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published Original Mesh Triangle List No %d", listCount[1]++);
+          ROS_DEBUG_THROTTLE(1, "Published Original Mesh Triangle List No %d", listCount[1]++);
           OriginalMeshPub_.publish(orgTriList_);
         }
         if (NavMeshLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
         {
-          ROS_INFO("Published Navigation Mesh Line List No %d", listCount[2]++);
+          ROS_DEBUG_THROTTLE(1, "Published Navigation Mesh Line List No %d", listCount[2]++);
           NavMeshLinesPub_.publish(navMeshLineList_);
         }
         if (RecastObstaclePub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published obstacles No %d", listCount[3]++);
+          ROS_DEBUG_THROTTLE(1, "Published obstacles No %d", listCount[3]++);
           visualization_msgs::MarkerArray ma;
           ma.markers = obstacleList_;
           RecastObstaclePub_.publish(ma);
         }
         if (OriginalMeshLinesPub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published Original Mesh Line List No %d", listCount[4]++);
+          ROS_DEBUG_THROTTLE(1, "Published Original Mesh Line List No %d", listCount[4]++);
           OriginalMeshLinesPub_.publish(originalLineList_);
         }
         if (NavMeshFilteredPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
         {
-          ROS_INFO("Published Filtered Navigation Mesh Triangle List No %d", listCount[5]++);
+          ROS_DEBUG_THROTTLE(1, "Published Filtered Navigation Mesh Triangle List No %d", listCount[5]++);
           NavMeshFilteredPub_.publish(navMeshFiltered_);
         }
         if (NavMeshFilteredLinesPub_.getNumSubscribers() >= 1) // Check Rviz subscribers
         {
-          ROS_INFO("Published Navigation Filtered Mesh Line List No %d", listCount[6]++);
+          ROS_DEBUG_THROTTLE(1, "Published Navigation Filtered Mesh Line List No %d", listCount[6]++);
           NavMeshFilteredLinesPub_.publish(navMeshLineListFiltered_);
         }
         if (graphNodePub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published Graph Nodes No %d", listCount[7]++);
+          ROS_DEBUG_THROTTLE(1, "Published Graph Nodes No %d", listCount[7]++);
           graphNodePub_.publish(graphNodeList_);
         }
         if (graphConnectionPub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published Graph Connection No %d", listCount[8]++);
+          ROS_DEBUG_THROTTLE(1, "Published Graph Connection No %d", listCount[8]++);
           graphConnectionPub_.publish(graphConnectionList_);
         }
         if (graphPub_.getNumSubscribers() >= 1)
         {
-          ROS_INFO("Published Graph No %d", listCount[9]++);
+          ROS_DEBUG_THROTTLE(1, "Published Graph No %d", listCount[9]++);
           graphPub_.publish(graph_);
         }
         if (graphFilteredPub_.getNumSubscribers() >= 1)
