@@ -43,6 +43,7 @@
 #include <iterator>
 #include <vector>
 #include <fstream>
+#include <string>
 
 struct RecastNode
 {
@@ -123,7 +124,7 @@ struct RecastNode
     //Create ROS::params for area costs
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
-      temp1 = temp + boost::to_string(i) + "_COST";
+      temp1 = temp + std::to_string(i) + "_COST";
       nodeHandle_.param(temp1, areaCostList_[i], 1.0f);
     }
     // recast settings
@@ -641,7 +642,7 @@ struct RecastNode
     //Create ROS::params for area costs
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
-      temp1 = temp + boost::to_string(i) + "_COST";
+      temp1 = temp + std::to_string(i) + "_COST";
       if (nodeHandle_.hasParam(temp1))
         nodeHandle_.getParam(temp1, areaCostList_[i]);
     }
@@ -754,7 +755,7 @@ struct RecastNode
 
     for (size_t i = 1; i < noAreaTypes_; i++)
     {
-      temp1 = temp + boost::to_string(i) + "_COST";
+      temp1 = temp + std::to_string(i) + "_COST";
       nodeHandle_.setParam(temp1, areaCostList_[i]);
     }
 
