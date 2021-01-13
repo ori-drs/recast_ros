@@ -1,8 +1,8 @@
-# recast_ros
+# recast_ros ![CI](https://github.com/ori-drs/recast_ros/workflows/CI/badge.svg)
 
 This package is a ROS wrapper for [recastnavigation](https://github.com/recastnavigation/recastnavigation.git). It allows to build and use navigation meshes for path planning, where the meshes can have areas of different types (and costs).
 
-![recast_ros](/image-rviz.png)
+![recast_ros](.docs/image-rviz.png)
 
 If you use this in your research, please cite:
 
@@ -59,7 +59,7 @@ rosrun rqt_reconfigure rqt_reconfigure
 
 and set parameters to desired values.
 
-![rqt_reconfigure](/image-dynrec.png)
+![rqt_reconfigure](.docs/image-dynrec.png)
 
 Dynamic reconfiguring can also be turned off in the recast_node.launch file, in case you prefer to use launch-file parameters instead.
 
@@ -84,8 +84,8 @@ You can use RViz InteractiveMarkers to,
 - Remove all existing obstacles
 - Delete specific obstacle(s)
 
-![menu options](/image-rviz-menu1.png)
-![menu obstacle](/image-rviz-menu2.png)
+![menu options](.docs/image-rviz-menu1.png)
+![menu obstacle](.docs/image-rviz-menu2.png)
 
 All the changes made through recast_node_interactive will appear in recast_node RViz window.
 

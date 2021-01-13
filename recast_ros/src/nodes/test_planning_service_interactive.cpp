@@ -42,6 +42,10 @@ public:
   {
     // ros
     ros::ServiceClient client_recast = node_handle_.serviceClient<recast_ros::RecastPathSrv>(path_service_);
+    // wait until the client exists...
+    ROS_INFO("Waiting for Recast path planning service to become available...");
+    client_recast.waitForExistence();
+    ROS_INFO("Recast planning service active!");
 
     // loop
     ros::Rate loop_rate(loop_rate_);
