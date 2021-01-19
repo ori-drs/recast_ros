@@ -25,7 +25,16 @@
 //#include "NavMeshTesterTool.h"
 #include "DetourCommon.h"
 #include <Eigen/Dense>
+
+#include <pcl/pcl_config.h>
+#if PCL_MINOR_VERSION < 10
 #include <pcl/io/vtk_lib_io.h>
+#else
+#include <pcl/io/auto_io.h>
+#include <pcl/io/vtk_io.h>
+#include <pcl/PolygonMesh.h>
+#endif
+#include <pcl/io/io.h>
 
 using namespace recast_ros;
 
@@ -50,12 +59,12 @@ RecastPlanner::RecastPlanner() : needToRotateMesh(true)
 bool RecastPlanner::build(const pcl::PolygonMesh &pclMesh, const std::vector<char> &areaTypes, const int &maxNodeSize)
 {
   // Build navmesh
-  geom = boost::shared_ptr<InputGeom>(new InputGeom());
+  geom = std::shared_ptr<InputGeom>(new InputGeom());
   if (!geom->load(&ctx, pclMesh, needToRotateMesh))
     return false;
   //Recast settings are set
   geom->setBuildSettings(stg);
-  sample = boost::shared_ptr<Sample>(new MySampleObstacles());
+  sample = std::shared_ptr<Sample>(new MySampleObstacles());
   sample->setContext(&ctx);
   sample->handleMeshChanged(geom.get());
   sample->handleSettings(maxNodeSize);
@@ -72,7 +81,11 @@ bool RecastPlanner::loadAndBuild(const std::string &mapFile, const std::string &
   // Load mesh file
   pcl::PolygonMesh pclMesh;
   std::vector<char> areaTypes;
+#if PCL_MINOR_VERSION < 10
   if (!pcl::io::loadPolygonFile(mapFile, pclMesh))
+#else
+  if (!pcl::io::load(mapFile, pclMesh))
+#endif
     return false;
   if (!loadAreas(areaFile, areaTypes))
     return false;

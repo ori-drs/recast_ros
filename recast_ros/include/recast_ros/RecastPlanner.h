@@ -22,7 +22,7 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 
 namespace recast_ros
@@ -41,7 +41,7 @@ public:
   //Interactive tool to project 3D goal point to 2D for test_planning_service_interactive
   bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType);
   bool getProjection(const pcl::PointXYZ &point, pcl::PointXYZ &proj, unsigned char &areaType, pcl::PointXYZ &polyCenter);
-  boost::shared_ptr<Sample> getMySample() { return sample; }
+  std::shared_ptr<Sample> getMySample() { return sample; }
   //Add RecastObstacles to NavMesh, updates the tiles/NavMesh
   bool addRecastObstacle(const float *pos, const float &radi, const float &height);
   //Remove specific RecastObstacle from NavMesh, updates the tiles/NavMesh
@@ -58,8 +58,8 @@ public:
 
 private:
   BuildContext ctx;
-  boost::shared_ptr<Sample> sample;
-  boost::shared_ptr<InputGeom> geom;
+  std::shared_ptr<Sample> sample;
+  std::shared_ptr<InputGeom> geom;
   bool needToRotateMesh; // Recast axes and ROS axes are different, thus input map may have to be rotated.
 };
 
