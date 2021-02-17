@@ -28,7 +28,14 @@
 #include "recast_ros/RecastGraph.h"
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
+
+#include <pcl/pcl_config.h>
+#if PCL_MINOR_VERSION < 10
 #include <pcl/io/vtk_lib_io.h>
+#else
+#include <pcl/io/vtk_io.h>
+#endif
+
 #include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -1526,8 +1533,8 @@ struct RecastNode
   interactive_markers::MenuHandler menuHandlerObs_;
   std::vector<visualization_msgs::InteractiveMarker> intMarkerVec_;
   std::vector<visualization_msgs::InteractiveMarkerControl> intControlVec_;
-  boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerServer_;
-  boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerObstacleServer_;
+  std::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerServer_;
+  std::shared_ptr<interactive_markers::InteractiveMarkerServer> interactiveMarkerObstacleServer_;
 
   visualization_msgs::Marker navMesh_;
   visualization_msgs::Marker navMeshFiltered_;

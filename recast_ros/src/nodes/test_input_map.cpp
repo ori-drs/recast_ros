@@ -18,9 +18,17 @@
 
 #include "recast_ros/InputMeshSrv.h"
 #include "recast_ros/RecastPlanner.h"
+
+#include <pcl/pcl_config.h>
+#if PCL_MINOR_VERSION < 10
+#include <pcl/io/vtk_lib_io.h>
+#else
+#include <pcl/io/vtk_io.h>
+#endif
+
 #include <pcl/common/io.h>
 #include <pcl/io/obj_io.h>
-#include <pcl/io/vtk_lib_io.h>
+
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -58,7 +66,11 @@ public:
         }
 
         // load mesh
+#if PCL_MINOR_VERSION < 10
         bool loaded_mesh = pcl::io::loadPolygonFileOBJ(path_, pclMesh);
+#else
+        bool loaded_mesh = pcl::io::loadOBJFile(path_, pclMesh);
+#endif
         if (loaded_mesh)
         {
             ROS_INFO("loaded OBJ file (%d polygons)", (int)pclMesh.polygons.size());

@@ -1,23 +1,19 @@
-  // Copyright (c) 2019 Martim Brandão martim@robots.ox.ac.uk, Omer Burak Aladag aladagomer@sabanciuniv.edu, Ioannis Havoutis ioannis@robots.ox.ac.uk
-  // This software is provided 'as-is', without any express or implied
-  // warranty. In no event will the authors be held liable for any damages
-  // arising from the use of this software.
-  // Permission is granted to anyone to use this software for any purpose,
-  // including commercial applications, and to alter it and redistribute it
-  // freely, subject to the following restrictions:
-  // 1. The origin of this software must not be misrepresented; you must not
-  //   claim that you wrote the original software. If you use this software
-  //   in a product, an acknowledgment in the product documentation would be
-  //   appreciated but is not required.
-  // 2. Altered source versions must be plainly marked as such, and must not be
-  //   misrepresented as being the original software.
-  // 3. This notice may not be removed or altered from any source distribution.
+// Copyright (c) 2019 Martim Brandão martim@robots.ox.ac.uk, Omer Burak Aladag aladagomer@sabanciuniv.edu, Ioannis Havoutis ioannis@robots.ox.ac.uk
+// This software is provided 'as-is', without any express or implied
+// warranty. In no event will the authors be held liable for any damages
+// arising from the use of this software.
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+// 1. The origin of this software must not be misrepresented; you must not
+//   claim that you wrote the original software. If you use this software
+//   in a product, an acknowledgment in the product documentation would be
+//   appreciated but is not required.
+// 2. Altered source versions must be plainly marked as such, and must not be
+//   misrepresented as being the original software.
+// 3. This notice may not be removed or altered from any source distribution.
 
-
-
-
-
-
+#include <pcl/pcl_config.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/point_traits.h>
 #include <pcl/point_types.h>
@@ -27,7 +23,13 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/io/ascii_io.h>
+
+#if PCL_MINOR_VERSION < 10
 #include <pcl/io/vtk_lib_io.h>
+#else
+#include <pcl/io/vtk_io.h>
+#endif
+
 #include <grid_map_ros/grid_map_ros.hpp>
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -82,7 +84,11 @@ struct Save
     ROS_INFO("saved AREAS to file");
     // test
     pcl::PolygonMesh pclMesh2;
+#if PCL_MINOR_VERSION < 10
     pcl::io::loadPolygonFileOBJ(savePath_, pclMesh2); // pcl::io::loadPolygonFilePLY(savePath_, pclMesh2);
+#else
+    pcl::io::loadOBJFile(savePath_, pclMesh2);
+#endif
     pcl::PointCloud<pcl::PointXYZ> verts, verts2;
     pcl::fromPCLPointCloud2(pclMesh.cloud, verts);
     pcl::fromPCLPointCloud2(pclMesh2.cloud, verts2);
